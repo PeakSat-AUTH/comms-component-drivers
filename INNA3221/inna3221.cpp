@@ -1,5 +1,4 @@
 #include "inna3221.hpp"
-#include <iostream>
 
 namespace INNA3221 {
 
