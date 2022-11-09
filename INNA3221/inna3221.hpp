@@ -72,10 +72,9 @@ namespace INNA3221{
         BUS_VOLTAGE_SS = 2,           /// Bus Voltage, Single-Shot
         SHUNT_BUS_VOLTAGE_SS = 3,     /// Shunt & Bus Voltage, Single-Shot
         POWER_DOWN_REND = 4,          /// Power-down
-        SHUNT_VOLTAGE_CONT = 1,       /// Shunt Voltage, Continuous
-        BUS_VOLTAGE_CONT = 2,         /// Bus Voltage, Continuous
-        SHUNT_BUS_VOLTAGE_CONT = 3,   /// Shunt & Bus Voltage, Continuous
-
+        SHUNT_VOLTAGE_CONT = 5,       /// Shunt Voltage, Continuous
+        BUS_VOLTAGE_CONT = 6,         /// Bus Voltage, Continuous
+        SHUNT_BUS_VOLTAGE_CONT = 7,   /// Shunt & Bus Voltage, Continuous
     };
 
     struct INNA3221Config{
@@ -149,6 +148,8 @@ namespace INNA3221{
         ~INNA3221(){};
 
     private:
+        // TODO: Replace with wait HAL function
+        __attribute__ ((__weak__)) void wait(uint16_t sec);
         __attribute__ ((__weak__)) void i2c_write(Register address, uint16_t value, Error &err);
         __attribute__ ((__weak__)) uint16_t i2c_read(Register address, Error &err){
             return 0;

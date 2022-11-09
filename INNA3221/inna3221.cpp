@@ -5,7 +5,7 @@ namespace INNA3221 {
     uint16_t voltage_conversion(int32_t v, uint16_t scale, uint16_t shift){
         return (v < 0) ?
         (~(std::abs(v) / scale << shift) + 1 & 0x7FFF) | 0x8000:
-        (v / 40);
+        (v / scale << shift);
     }
 
     void INNA3221::setup(Error &err) {
@@ -49,6 +49,6 @@ namespace INNA3221 {
 
         i2c_write(Register::PWRVL, voltage_conversion(config.power_valid_lower, 8000, 1), err);
         if (err != Error::NO_ERRORS) {return;}
-
     }
+
 }
