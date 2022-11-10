@@ -3,10 +3,14 @@
 
 #include <cstdint>
 #include <valarray>
+#include <optional>
 #include <type_traits>
+#include <tuple>
 
 namespace INNA3221{
     typedef std::pair<uint32_t, uint32_t> VoltageThreshold;
+
+    typedef std::tuple<std::optional<uint32_t>, std::optional<uint32_t>, std::optional<uint32_t>> ChannelMeasurement;
 
     enum class Register{
         CONFG   = 0x00, /// Configuration
@@ -41,6 +45,7 @@ namespace INNA3221{
     enum class Error {
         NO_ERRORS = 0,
         I2C_FAIlURE,
+        INVALID_STATE,
     };
 
     /// The number of voltage samples that are averaged together
@@ -142,20 +147,48 @@ namespace INNA3221{
     public:
         INNA3221(const INNA3221Config&& config, Error &err):
                 config(std::move(config)) {
-            setup(err);
+            setup();
         };
 
         ~INNA3221(){};
 
     private:
         // TODO: Replace with wait HAL function
-        __attribute__ ((__weak__)) void wait(uint16_t sec);
-        __attribute__ ((__weak__)) void i2c_write(Register address, uint16_t value, Error &err);
-        __attribute__ ((__weak__)) uint16_t i2c_read(Register address, Error &err){
-            return 0;
+        __attribute__ ((__weak__)) void wait(uint16_t msec);
+        [[nodiscard]] __attribute__ ((__weak__)) Error i2c_write(Register address, uint16_t value);
+        [[nodiscard]] __attribute__ ((__weak__)) std::pair<uint16_t, Error> i2c_read(Register address){
+            return std::make_pair<uint16_t, Error>(0, Error::NO_ERRORS);
         };
 
-        void setup(Error &err);
+        /**
+         * Writes to a specific field of the register
+         * @param address       Register address
+         * @param value         Value to write to
+         * @param mask          Mask of the value
+         * @param shift         Shift bits - determines the register field to write to
+         * @return              Raised error
+         */
+        [[nodiscard]] Error write_register_field(Register address, uint16_t value, uint16_t mask, uint16_t shift);
+
+        /**
+         * Sets the config register as per the passed config
+         * @return Raised error
+         */
+        [[nodiscard]] Error setup();
+
+        /**
+         * Triggers a measurement of bus or shunt voltage for the active channels. Note that the driver halts until we
+         * get a valid reading or an alert is raised.
+         *
+         * If the mode is set to continuous, values will be updated periodically depending on the samples and conversion
+         * time set. For single-shot mode
+         */
+        [[nodiscard]] Error take_measurement();
+
+        /// Bus voltage across the three measured channels (NULL values indicate that the channel isn't currently monitored)
+        ChannelMeasurement bus_voltage{NULL, NULL, NULL};
+        /// Shunt voltage across the three measured channels (NULL values indicate that the channel isn't currently monitored)
+        ChannelMeasurement shunt_voltage{NULL, NULL, NULL};
 
         INNA3221Config config;
     };
