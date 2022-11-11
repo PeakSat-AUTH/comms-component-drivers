@@ -2,15 +2,15 @@
 
 namespace INA3221 {
 
-    uint16_t voltage_conversion(int32_t v, uint16_t scale, uint16_t shift){
+    uint16_t voltage_conversion(int32_t v, uint16_t scale, uint16_t shift) {
         return (v < 0) ?
-        (~(std::abs(v) / scale << shift) + 1 & 0x7FFF) | 0x8000:
-        (v / scale << shift);
+               (~(std::abs(v) / scale << shift) + 1 & 0x7FFF) | 0x8000 :
+               (v / scale << shift);
     }
 
-    Error INA3221::write_register_field(Register address, uint16_t value, uint16_t mask, uint16_t shift){
+    Error INA3221::write_register_field(Register address, uint16_t value, uint16_t mask, uint16_t shift) {
         auto[reg, err] = i2c_read(address);
-        if (err != Error::NO_ERRORS){
+        if (err != Error::NO_ERRORS) {
             return err;
         }
         uint16_t val = (reg & ~mask) | (value << shift);
@@ -27,52 +27,54 @@ namespace INA3221 {
 
         err = i2c_write(Register::CONFG, mode);
 
-        if (err != Error::NO_ERRORS) {return err;}
+        if (err != Error::NO_ERRORS) { return err; }
 
         auto[critical_threshold_1, warning_threshold_1] = config.threshold1;
 
         err = i2c_write(Register::CH1CA, voltage_conversion(critical_threshold_1, 40, 3));
-        if (err != Error::NO_ERRORS) {return err;}
+        if (err != Error::NO_ERRORS) { return err; }
 
         err = i2c_write(Register::CH1WA, voltage_conversion(warning_threshold_1, 40, 3));
-        if (err != Error::NO_ERRORS) {return err;}
+        if (err != Error::NO_ERRORS) { return err; }
 
         auto[critical_threshold_2, warning_threshold_2] = config.threshold2;
 
         err = i2c_write(Register::CH2CA, voltage_conversion(critical_threshold_2, 40, 3));
-        if (err != Error::NO_ERRORS) {return err;}
+        if (err != Error::NO_ERRORS) { return err; }
 
         err = i2c_write(Register::CH2WA, voltage_conversion(warning_threshold_2, 40, 3));
-        if (err != Error::NO_ERRORS) {return err;}
+        if (err != Error::NO_ERRORS) { return err; }
 
         auto[critical_threshold_3, warning_threshold_3] = config.threshold3;
 
         err = i2c_write(Register::CH3CA, voltage_conversion(critical_threshold_3, 40, 3));
-        if (err != Error::NO_ERRORS) {return err;}
+        if (err != Error::NO_ERRORS) { return err; }
 
         err = i2c_write(Register::CH3WA, voltage_conversion(warning_threshold_3, 40, 3));
-        if (err != Error::NO_ERRORS) {return err;}
+        if (err != Error::NO_ERRORS) { return err; }
 
         err = i2c_write(Register::SHVLL, voltage_conversion(config.shuntVoltageSumLimit, 40, 1));
-        if (err != Error::NO_ERRORS) {return err;}
+        if (err != Error::NO_ERRORS) { return err; }
 
         err = i2c_write(Register::PWRVU, voltage_conversion(config.powerValidUpper, 8000, 1));
-        if (err != Error::NO_ERRORS) {return err;}
+        if (err != Error::NO_ERRORS) { return err; }
 
         err = i2c_write(Register::PWRVL, voltage_conversion(config.powerValidLower, 8000, 1));
-        if (err != Error::NO_ERRORS) {return err;}
+        if (err != Error::NO_ERRORS) { return err; }
 
-        err = i2c_write(Register::MASKE, (config.summationChannelControl1 << 14) | (config.summationChannelControl2 << 13)
-        | (config.summationChannelControl3 << 12) | (config.enableWarnings << 11) | (config.enableCritical << 10));
+        err = i2c_write(Register::MASKE,
+                        (config.summationChannelControl1 << 14) | (config.summationChannelControl2 << 13)
+                        | (config.summationChannelControl3 << 12) | (config.enableWarnings << 11) |
+                        (config.enableCritical << 10));
         return err;
     }
 
-    [[nodiscard]] Error INA3221::take_measurement(){
+    [[nodiscard]] Error INA3221::take_measurement() {
     }
 
-    void handle_irq(void){
+    void handle_irq(void) {
 
     }
 }
 
-int main(){return 0;}
+int main() { return 0; }
