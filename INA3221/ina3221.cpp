@@ -62,7 +62,9 @@ namespace INA3221 {
         err = i2c_write(Register::PWRVL, voltage_conversion(config.powerValidLower, 8000, 1));
         if (err != Error::NO_ERRORS) {return err;}
 
-        return Error::NO_ERRORS;
+        err = i2c_write(Register::MASKE, (config.summationChannelControl1 << 14) | (config.summationChannelControl2 << 13)
+        | (config.summationChannelControl3 << 12) | (config.enableWarnings << 11) | (config.enableCritical << 10));
+        return err;
     }
 
     [[nodiscard]] Error INA3221::take_measurement(){

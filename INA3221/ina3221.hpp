@@ -31,7 +31,7 @@ namespace INA3221{
         MASKE   = 0x0F, /// Mask-Enable
         PWRVU   = 0x10, /// Power-Valid Upper Limit
         PWRVL   = 0x11, /// Power-Valid Lower Limit
-        MFRID   = 0xFE, /// Manufaturer ID
+        MFRID   = 0xFE, /// Manufacturer ID
         DIEID   = 0xFF, /// Die ID
     };
 
@@ -85,7 +85,15 @@ namespace INA3221{
     struct INA3221Config{
 
         /// Determine whether summation channel value is periodically updated
-        bool summationChannelControl = true;
+        bool summationChannelControl1 = true;
+        bool summationChannelControl2 = true;
+        bool summationChannelControl3 = true;
+
+        /// Warning alerts enabled
+        bool enableWarnings = true;
+
+        /// Critical alerts enabled
+        bool enableCritical = true;
 
         /// Determines whether channel 1 is enabled
         bool enableChannel1 = true;
