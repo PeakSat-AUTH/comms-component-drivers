@@ -1,5 +1,5 @@
-#ifndef COMPONENT_DRIVERS_INNA3221_HPP
-#define COMPONENT_DRIVERS_INNA3221_HPP
+#ifndef COMPONENT_DRIVERS_INA3221_HPP
+#define COMPONENT_DRIVERS_INA3221_HPP
 
 #include <cstdint>
 #include <valarray>
@@ -7,7 +7,7 @@
 #include <type_traits>
 #include <tuple>
 
-namespace INNA3221{
+namespace INA3221{
     typedef std::pair<uint32_t, uint32_t> VoltageThreshold;
 
     typedef std::tuple<std::optional<uint32_t>, std::optional<uint32_t>, std::optional<uint32_t>> ChannelMeasurement;
@@ -82,16 +82,19 @@ namespace INNA3221{
         SHUNT_BUS_VOLTAGE_CONT = 7,   /// Shunt & Bus Voltage, Continuous
     };
 
-    struct INNA3221Config{
+    struct INA3221Config{
+
+        /// Determine whether summation channel value is periodically updated
+        bool summationChannelControl = true;
 
         /// Determines whether channel 1 is enabled
-        bool enable_channel1 = true;
+        bool enableChannel1 = true;
 
         /// Determines whether channel 2 is enabled
-        bool enable_channel2 = true;
+        bool enableChannel2 = true;
 
         /// Determines whether channel 3 is enabled
-        bool enable_channel3 = true;
+        bool enableChannel3 = true;
 
         /// The number of voltage samples that are averaged together
         AveragingMode averagingMode = AveragingMode::AVG_4;
@@ -122,7 +125,7 @@ namespace INNA3221{
          *  This register also controls whether this is applies only to shunt voltage, bus voltage
          *  or both.
          */
-        OperatingMode operating_mode = OperatingMode::POWER_DOWN;
+        OperatingMode operatingMode = OperatingMode::POWER_DOWN;
 
         /// Shunt voltage threshold for critical and warning alert for channel1 [μV]
         VoltageThreshold threshold1;
@@ -134,23 +137,23 @@ namespace INNA3221{
         VoltageThreshold threshold3;
 
         /// Shunt voltage sum limit [μV]
-        uint32_t shunt_voltage_sum_limit;
+        uint32_t shuntVoltageSumLimit;
 
         /// Upper limit of power-valid [μV]
-        uint32_t power_valid_upper;
+        uint32_t powerValidUpper;
 
         /// Lower limit of power-valid [μV]
-        uint32_t power_valid_lower;
+        uint32_t powerValidLower;
     };
 
-    class INNA3221 {
+    class INA3221 {
     public:
-        INNA3221(const INNA3221Config&& config, Error &err):
+        INA3221(const INA3221Config&& config, Error &err):
                 config(std::move(config)) {
             setup();
         };
 
-        ~INNA3221(){};
+        ~INA3221(){};
 
     private:
         // TODO: Replace with wait HAL function
@@ -190,9 +193,11 @@ namespace INNA3221{
         /// Shunt voltage across the three measured channels (NULL values indicate that the channel isn't currently monitored)
         ChannelMeasurement shunt_voltage{NULL, NULL, NULL};
 
-        INNA3221Config config;
+        void handle_irq(void);
+
+        INA3221Config config;
     };
 }
 
 
-#endif //COMPONENT_DRIVERS_INNA3221_HPP
+#endif //COMPONENT_DRIVERS_INA3221_HPP
