@@ -203,6 +203,8 @@ namespace INA3221 {
         /// Shunt voltage across the three measured channels (NULL values indicate that the channel isn't currently monitored)
         ChannelMeasurement shunt_voltage{NULL, NULL, NULL};
 
+        [[nodiscard]] std::pair<uint16_t, Error>read_voltage(Register reg);
+
         void handle_irq(void);
 
         INA3221Config config;

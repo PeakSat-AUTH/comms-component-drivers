@@ -18,6 +18,10 @@ namespace INA3221 {
         return err;
     }
 
+    std::pair<uint16_t, Error>read_voltage(Register reg){
+
+    }
+
     Error INA3221::setup() {
         uint16_t mode = (config.enableChannel1 << 14) | (config.enableChannel1 << 13) | (config.enableChannel1 << 12) |
                         ((uint16_t) config.averagingMode << 10) | ((uint16_t) config.bus_voltage_time << 6) |
@@ -72,9 +76,72 @@ namespace INA3221 {
     [[nodiscard]] Error INA3221::take_measurement() {
     }
 
-    void handle_irq(void) {
+    void INA3221::handle_irq(void) {
+        auto[value, err] = i2c_read(Register::MASKE);
 
+        if (value & 0x0200){
+            // Send critical alert of channel 1 to FDIR
+        }
+        if (value & 0x0100){
+            // Send critical alert of channel 2 to FDIR
+        }
+        if (value & 0x0080){
+            // Send critical alert of channel 3 to FDIR
+        }
+        if (value & 0x0040){
+            // Send summation alert flag to FDIR
+        }
+        if (value & 0x0020){
+            // Send warning alert of channel 1 to FDIR
+        }
+        if (value & 0x0010){
+            // Send warning alert of channel 2 to FDIR
+        }
+        if (value & 0x0008){
+            // Send warning alert of channel 3 to FDIR
+        }
+        if (value & 0x0004){
+            //
+        }
+        if (value & 0x0002){
+            //
+        }
+        if (value & 0x0001){
+            uint16_t bus_voltage1 = i2c_read(Register::CH1BV).first;
+            uint16_t bus_voltage2 = i2c_read(Register::CH2BV).first;
+            uint16_t bus_voltage3 = i2c_read(Register::CH3BV).first;
+
+            uint16_t shunt_voltage1 = i2c_read(Register::CH1SV).first;
+            uint16_t shunt_voltage2 = i2c_read(Register::CH2SV).first;
+            uint16_t shunt_voltage3 = i2c_read(Register::CH3SV).first;
+
+
+            // Check if bus voltage is monitored
+            if ((uint16_t) config.operatingMode & 0x10 || (uint16_t) config.operatingMode & 0x11) {
+                bus_voltage = std::make_tuple(
+                        config.enableChannel1 ? NULL : bus_voltage1,
+                        config.enableChannel2 ? NULL : bus_voltage2,
+                        config.enableChannel3 ? NULL : bus_voltage3
+                );
+            }
+            else {
+                bus_voltage = std::make_tuple(NULL, NULL, NULL);
+            }
+
+            // Check if shunt voltage is monitored
+            if ((uint16_t) config.operatingMode & 0x01 || (uint16_t) config.operatingMode & 0x11) {
+                bus_voltage = std::make_tuple(
+                        config.enableChannel1 ? NULL : shunt_voltage1,
+                        config.enableChannel2 ? NULL : shunt_voltage2,
+                        config.enableChannel3 ? NULL : shunt_voltage3
+                );
+            }
+            else {
+                shunt_voltage = std::make_tuple(NULL, NULL, NULL);
+            }
+        }
     }
 }
+
 
 int main() { return 0; }
