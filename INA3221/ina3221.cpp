@@ -18,10 +18,6 @@ namespace INA3221 {
         return err;
     }
 
-    std::pair<uint16_t, Error>read_voltage(Register reg){
-
-    }
-
     Error INA3221::setup() {
         uint16_t mode = (config.enableChannel1 << 14) | (config.enableChannel1 << 13) | (config.enableChannel1 << 12) |
                         ((uint16_t) config.averagingMode << 10) | ((uint16_t) config.busVoltageTime << 6) |
@@ -71,9 +67,6 @@ namespace INA3221 {
                         | (config.summationChannelControl3 << 12) | (config.enableWarnings << 11) |
                         (config.enableCritical << 10));
         return err;
-    }
-
-    [[nodiscard]] Error INA3221::take_measurement() {
     }
 
     void INA3221::handle_irq(void) {
