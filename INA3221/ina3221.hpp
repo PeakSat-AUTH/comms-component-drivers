@@ -112,14 +112,14 @@ namespace INA3221 {
           * This value should be selected according to the time requirements of the application.
           * Note that it applies to all channels
          */
-        VoltageTime bus_voltage_time = VoltageTime::V_1_1_MS;
+        VoltageTime busVoltageTime = VoltageTime::V_1_1_MS;
 
         /**
           * Time of shunt voltage measurement conversion.
           * This value should be selected according to the time requirements of the application.
           * Note that it applies to all channels
          */
-        VoltageTime shunt_voltage_time = VoltageTime::V_1_1_MS;
+        VoltageTime shuntVoltageTime = VoltageTime::V_1_1_MS;
 
         /**
          * Select mode operation of INNA3211. The main three modes are:
@@ -199,9 +199,9 @@ namespace INA3221 {
         [[nodiscard]] Error take_measurement();
 
         /// Bus voltage across the three measured channels (NULL values indicate that the channel isn't currently monitored)
-        ChannelMeasurement bus_voltage{NULL, NULL, NULL};
+        ChannelMeasurement busVoltage{NULL, NULL, NULL};
         /// Shunt voltage across the three measured channels (NULL values indicate that the channel isn't currently monitored)
-        ChannelMeasurement shunt_voltage{NULL, NULL, NULL};
+        ChannelMeasurement shuntVoltage{NULL, NULL, NULL};
 
         [[nodiscard]] std::pair<uint16_t, Error>read_voltage(Register reg);
 

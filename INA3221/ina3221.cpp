@@ -24,8 +24,8 @@ namespace INA3221 {
 
     Error INA3221::setup() {
         uint16_t mode = (config.enableChannel1 << 14) | (config.enableChannel1 << 13) | (config.enableChannel1 << 12) |
-                        ((uint16_t) config.averagingMode << 10) | ((uint16_t) config.bus_voltage_time << 6) |
-                        ((uint16_t) config.shunt_voltage_time << 3) | ((uint16_t) config.operatingMode);
+                        ((uint16_t) config.averagingMode << 10) | ((uint16_t) config.busVoltageTime << 6) |
+                        ((uint16_t) config.shuntVoltageTime << 3) | ((uint16_t) config.operatingMode);
 
         Error err;
 
@@ -33,28 +33,28 @@ namespace INA3221 {
 
         if (err != Error::NO_ERRORS) { return err; }
 
-        auto[critical_threshold_1, warning_threshold_1] = config.threshold1;
+        auto[criticalThreshold1, warningThreshold1] = config.threshold1;
 
-        err = i2c_write(Register::CH1CA, voltage_conversion(critical_threshold_1, 40, 3));
+        err = i2c_write(Register::CH1CA, voltage_conversion(criticalThreshold1, 40, 3));
         if (err != Error::NO_ERRORS) { return err; }
 
-        err = i2c_write(Register::CH1WA, voltage_conversion(warning_threshold_1, 40, 3));
+        err = i2c_write(Register::CH1WA, voltage_conversion(warningThreshold1, 40, 3));
         if (err != Error::NO_ERRORS) { return err; }
 
-        auto[critical_threshold_2, warning_threshold_2] = config.threshold2;
+        auto[criticalThreshold2, warningThreshold2] = config.threshold2;
 
-        err = i2c_write(Register::CH2CA, voltage_conversion(critical_threshold_2, 40, 3));
+        err = i2c_write(Register::CH2CA, voltage_conversion(criticalThreshold2, 40, 3));
         if (err != Error::NO_ERRORS) { return err; }
 
-        err = i2c_write(Register::CH2WA, voltage_conversion(warning_threshold_2, 40, 3));
+        err = i2c_write(Register::CH2WA, voltage_conversion(warningThreshold2, 40, 3));
         if (err != Error::NO_ERRORS) { return err; }
 
-        auto[critical_threshold_3, warning_threshold_3] = config.threshold3;
+        auto[criticalThreshold3, warningThreshold3] = config.threshold3;
 
-        err = i2c_write(Register::CH3CA, voltage_conversion(critical_threshold_3, 40, 3));
+        err = i2c_write(Register::CH3CA, voltage_conversion(criticalThreshold3, 40, 3));
         if (err != Error::NO_ERRORS) { return err; }
 
-        err = i2c_write(Register::CH3WA, voltage_conversion(warning_threshold_3, 40, 3));
+        err = i2c_write(Register::CH3WA, voltage_conversion(warningThreshold3, 40, 3));
         if (err != Error::NO_ERRORS) { return err; }
 
         err = i2c_write(Register::SHVLL, voltage_conversion(config.shuntVoltageSumLimit, 40, 1));
@@ -118,26 +118,26 @@ namespace INA3221 {
 
             // Check if bus voltage is monitored
             if ((uint16_t) config.operatingMode & 0x10 || (uint16_t) config.operatingMode & 0x11) {
-                bus_voltage = std::make_tuple(
+                busVoltage = std::make_tuple(
                         config.enableChannel1 ? NULL : bus_voltage1,
                         config.enableChannel2 ? NULL : bus_voltage2,
                         config.enableChannel3 ? NULL : bus_voltage3
                 );
             }
             else {
-                bus_voltage = std::make_tuple(NULL, NULL, NULL);
+                busVoltage = std::make_tuple(NULL, NULL, NULL);
             }
 
             // Check if shunt voltage is monitored
             if ((uint16_t) config.operatingMode & 0x01 || (uint16_t) config.operatingMode & 0x11) {
-                bus_voltage = std::make_tuple(
+                busVoltage = std::make_tuple(
                         config.enableChannel1 ? NULL : shunt_voltage1,
                         config.enableChannel2 ? NULL : shunt_voltage2,
                         config.enableChannel3 ? NULL : shunt_voltage3
                 );
             }
             else {
-                shunt_voltage = std::make_tuple(NULL, NULL, NULL);
+                shuntVoltage = std::make_tuple(NULL, NULL, NULL);
             }
         }
     }
