@@ -203,6 +203,30 @@ namespace INA3221 {
 
     class INA3221 {
     public:
+        /**
+         * Sets the config register as per the passed config
+         * @return Raised error
+         */
+        [[nodiscard]] Error setup();
+
+        /**
+         * Triggers a measurement of bus or shunt voltage for the active channels. Note that the driver halts until we
+         * get a valid reading or an alert is raised.
+         *
+         * If the mode is set to continuous, values will be updated periodically depending on the samples and conversion
+         * time set. For single-shot mode, a measurement will be taken only once and the register will need to be
+         * re-written in order to get a new measurements
+         */
+        [[nodiscard]] Error changeOperatingMode(OperatingMode operatingMode);
+
+        /**
+         * Get previous measurement. If the driver is set in continuous mode then this value should be automatically
+         * updated periodically. If set to single-shot then `changeOperatingMode` should be called first to trigger
+         * another measurement. The bus and channel voltage are reset to avoid reading duplicates.
+         * TODO: Also attach timestamps?
+         */
+        [[nodiscard]] std::pair<ChannelMeasurement, ChannelMeasurement> getMeasurement();
+
         INA3221(const INA3221Config &&config, Error &err) :
                 config(std::move(config)) {
             setup();
@@ -244,21 +268,6 @@ namespace INA3221 {
          * @return              Error status
          */
         [[nodiscard]] Error write_register_field(Register address, uint16_t value, uint16_t mask, uint16_t shift);
-
-        /**
-         * Sets the config register as per the passed config
-         * @return Raised error
-         */
-        [[nodiscard]] Error setup();
-
-        /**
-         * Triggers a measurement of bus or shunt voltage for the active channels. Note that the driver halts until we
-         * get a valid reading or an alert is raised.
-         *
-         * If the mode is set to continuous, values will be updated periodically depending on the samples and conversion
-         * time set. For single-shot mode
-         */
-        [[nodiscard]] Error take_measurement();
 
         /// Bus voltage across the three measured channels (NULL values indicate that the channel isn't currently monitored)
         ChannelMeasurement busVoltage{NULL, NULL, NULL};

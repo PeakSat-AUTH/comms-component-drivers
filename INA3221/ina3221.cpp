@@ -18,6 +18,16 @@ namespace INA3221 {
         return err;
     }
 
+    [[nodiscard]] Error INA3221::changeOperatingMode(OperatingMode operatingMode){
+        return write_register_field(Register::CONFG, (uint16_t) operatingMode, 0x7, 0);
+    }
+
+    [[nodiscard]] std::pair<ChannelMeasurement, ChannelMeasurement> INA3221::getMeasurement(){
+        ChannelMeasurement busMeasurement = std::exchange(busVoltage, std::make_tuple(NULL, NULL, NULL));
+        ChannelMeasurement shuntMeasurement = std::exchange(shuntVoltage, std::make_tuple(NULL, NULL, NULL));
+        return std::make_pair(busMeasurement, shuntMeasurement);
+    }
+
     Error INA3221::setup() {
         uint16_t mode = (config.enableChannel1 << 14) | (config.enableChannel1 << 13) | (config.enableChannel1 << 12) |
                         ((uint16_t) config.averagingMode << 10) | ((uint16_t) config.busVoltageTime << 6) |
