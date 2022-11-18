@@ -1,7 +1,7 @@
 #ifndef INC_AT86RF215CONFIG_HPP_
 #define INC_AT86RF215CONFIG_HPP_
 
-#include "at86rf215_definitions.h"
+#include "at86rf215definitions.hpp"
 
 namespace AT86RF215 {
 
@@ -50,15 +50,15 @@ struct AT86RF215Configuration {
 	uint8_t energyDetectFactor24 = 0x10;
 
 	// PLL
-	uint16_t pllFrequency09 = 0x0CF8;
+	uint16_t pllFrequency09 = 0x8D20;
 	uint16_t pllFrequency24 = 0x0CF8;
-	uint16_t pllChannelNumber09 = 0x0000;
+	uint16_t pllChannelNumber09 = 0x0003;
 	uint16_t pllChannelNumber24 = 0x0000;
 	PLLChannelMode pllChannelMode09 = PLLChannelMode::IEECompliant;
 	PLLChannelMode pllChannelMode24 = PLLChannelMode::IEECompliant;
 	PLLBandwidth pllBandwidth09 = PLLBandwidth::BWDefault;
 	PLLBandwidth pllBandwidth24 = PLLBandwidth::BWDefault;
-	uint8_t channelSpacing09 =  0x08;
+	uint8_t channelSpacing09 =  0x30;
 	uint8_t channelSpacing24 =  0x08;
 
 
@@ -139,9 +139,25 @@ struct AT86RF215Configuration {
 	ChipMode chipMode = ChipMode::RF_MODE_BBRF;
 	SkewAlignment skewAlignment = SkewAlignment::SKEW3906NS;
 
+	// Baseband Core
+
+	bool continuousTransmit09 = false;
+	bool continuousTransmit24 = false;
+	bool frameCheckSequenceFilter09 = false;
+	bool frameCheckSequenceFilter24 = false;
+	bool transmitterAutoFrameCheckSequence09 = false;
+	bool transmitterAutoFrameCheckSequence24 = false;
+	FrameCheckSequenceType frameCheckSequenceType09 = FrameCheckSequenceType::FCS_32;
+	FrameCheckSequenceType frameCheckSequenceType24 = FrameCheckSequenceType::FCS_32;
+	bool baseBandEnable09 = true;
+	bool baseBandEnable24 = true;
+	PhysicalLayerType physicalLayerType09 = PhysicalLayerType::BB_MRFSK;
+	PhysicalLayerType physicalLayerType24 = PhysicalLayerType::BB_OFF;
+
 	// Enabled Interrupts
 
 	// Baseband IRQ
+    // All interrupts enabled
 	bool frameBufferLevelIndication09 = true;
 	bool frameBufferLevelIndication24 = true;
 	bool agcRelease09 = true;
