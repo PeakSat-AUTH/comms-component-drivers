@@ -4,7 +4,7 @@
 namespace AT86RF215 {
 
 void AT86RF215::spi_write_8(uint16_t address, uint8_t value, Error &err) {
-	uint8_t msg[3] = { 0x80 | ((address >> 8) & 0x7F), address & 0xFF, value };
+	uint8_t msg[3] = { static_cast<uint8_t>(0x80 | ((address >> 8) & 0x7F)), static_cast<uint8_t>(address & 0xFF), value };
 	HAL_GPIO_WritePin(SPI_NSS_GPIO_Port, SPI_NSS_Pin, GPIO_PIN_RESET);
 	uint8_t hal_error = HAL_SPI_Transmit(hspi, msg, 3, TIMEOUT);
 
@@ -18,7 +18,7 @@ void AT86RF215::spi_write_8(uint16_t address, uint8_t value, Error &err) {
 }
 
 uint8_t AT86RF215::spi_read_8(uint16_t address, Error &err) {
-	uint8_t msg[2] = { (address >> 8) & 0x7F, address & 0xFF };
+	uint8_t msg[2] = { static_cast<uint8_t>((address >> 8) & 0x7F), static_cast<uint8_t>(address & 0xFF) };
 	uint8_t response[3];
 	HAL_GPIO_WritePin(SPI_NSS_GPIO_Port, SPI_NSS_Pin, GPIO_PIN_RESET);
 	uint8_t hal_error = HAL_SPI_TransmitReceive(hspi, msg, response, 3,
@@ -37,7 +37,7 @@ uint8_t AT86RF215::spi_read_8(uint16_t address, Error &err) {
 
 void AT86RF215::spi_block_write_8(uint16_t address, uint16_t n, uint8_t *value,
 		Error &err) {
-	uint8_t msg[2] = { 0x80 | ((address >> 8) & 0x7F), address & 0xFF };
+	uint8_t msg[2] = { static_cast<uint8_t>(0x80 | ((address >> 8) & 0x7F)), static_cast<uint8_t>(address & 0xFF) };
 	HAL_GPIO_WritePin(SPI_NSS_GPIO_Port, SPI_NSS_Pin, GPIO_PIN_RESET);
 	uint8_t hal_error = HAL_SPI_Transmit(hspi, msg, 2, TIMEOUT);
 	hal_error = HAL_SPI_Transmit(hspi, value, n, TIMEOUT);
@@ -52,13 +52,13 @@ void AT86RF215::spi_block_write_8(uint16_t address, uint16_t n, uint8_t *value,
 }
 
 void AT86RF215::spi_write_16(uint16_t address, uint16_t value, Error &err) {
-	uint8_t val[] = { (value & 0xFF00) >> 8, value & 0x00FF };
+	uint8_t val[] = { static_cast<uint8_t>((value & 0xFF00) >> 8), static_cast<uint8_t>(value & 0x00FF) };
 	//spi_block_write_8(address, 2, val);
 }
 
 uint8_t* AT86RF215::spi_block_read_8(uint16_t address, uint8_t n,
 		uint8_t *response, Error &err) {
-	uint8_t msg[2] = { (address >> 8) & 0x7F, address & 0xFF };
+	uint8_t msg[2] = { static_cast<uint8_t>((address >> 8) & 0x7F), static_cast<uint8_t>(address & 0xFF) };
 
 	HAL_GPIO_WritePin(SPI_NSS_GPIO_Port, SPI_NSS_Pin, GPIO_PIN_RESET);
 	uint8_t hal_error = HAL_SPI_TransmitReceive(hspi, msg, response, n + 2,
@@ -110,7 +110,7 @@ void AT86RF215::set_state(Transceiver transceiver, State state_cmd,
 
 	err = Error::NO_ERRORS;
 
-	switch (state) {
+	switch (state_cmd) {
 	case RF_TRXOFF:
 		break;
 	case RF_TXPREP:
@@ -335,7 +335,7 @@ void AT86RF215::configure_pll(Transceiver transceiver, uint16_t freq,
 		return;
 	}
 
-	set_pll_channel_frequency(transceiver, channel_spacing, err);
+	set_pll_channel_spacing(transceiver, channel_spacing, err);
 	if (err != Error::NO_ERRORS) {
 		return;
 	}
@@ -1246,15 +1246,16 @@ int8_t AT86RF215::get_receiver_energy_detection(Transceiver transceiver,
 // read rssi
 // determine whether received signal strength is acceptable
 
-void AT86RF215::transmitBasbandPacketsTx(Transceiver transceiver,
+void AT86RF215::transmitBasebandPacketsTx(Transceiver transceiver,
 		uint8_t *packet, uint16_t length, Error &err) {
-	State state = get_state(transceiver, err);
+    if (tx_ongoing || rx_ongoing){
+        err = Error::ONGOING_TRANSMISSION_RECEPTION;
+        return;
+    }
+
+	set_state(transceiver, State::RF_TRXOFF, err);
 	if (err != Error::NO_ERRORS) {
 		return;
-	}
-
-	if (state != State::RF_TX) {
-		err = Error::INVALID_STATE_FOR_OPERATION;
 	}
 
 	RegisterAddress regtxflh;
@@ -1286,18 +1287,65 @@ void AT86RF215::transmitBasbandPacketsTx(Transceiver transceiver,
 	if (err != Error::NO_ERRORS) {
 		return;
 	}
+
+	tx_ongoing = true;
+	set_state(transceiver, State::RF_TXPREP, err);
+
 }
 
-void AT86RF215::transmitBasebandPrep(Transceiver transceiver, Error &err) {
-	State state = get_state(transceiver, err);
+void AT86RF215::clear_channel_assessment(Transceiver transceiver, Error &err){
+    if (tx_ongoing or rx_ongoing){
+        err = ONGOING_TRANSMISSION_RECEPTION;
+
+    }
+    set_state(transceiver, State::RF_TRXOFF, err);
+    if (err != Error::NO_ERRORS) {
+        return;
+    }
+
+    rx_ongoing = true;
+    cca_ongoing = true;
+    set_state(transceiver, State::RF_TXPREP, err);
+}
+
+
+void AT86RF215::transmitBasebandPacketsRx(Transceiver transceiver, Error &err){
+	set_state(transceiver, State::RF_TRXOFF, err);
+	if (err != Error::NO_ERRORS) {
+			return;
+		}
+
+	set_state(transceiver, State::RF_RX, err);
+}
+
+void AT86RF215::packetReception(Transceiver transceiver, Error &err){
 	if (err != Error::NO_ERRORS) {
 		return;
 	}
-	// This can only be triggered if we are in the state TRXOFF
-	if (state != State::RF_TRXOFF) {
-		err = Error::INVALID_STATE_FOR_OPERATION;
+
+	RegisterAddress regtxflh;
+	RegisterAddress regtxfll;
+	RegisterAddress regfbtxs;
+
+	if (transceiver == RF09) {
+		regtxflh = BBC0_TXFLH;
+		regtxfll = BBC0_TXFLL;
+		regfbtxs = BBC0_FBTXS;
+	} else if (transceiver == RF24) {
+		regtxflh = BBC1_TXFLH;
+		regtxfll = BBC1_TXFLL;
+		regfbtxs = BBC1_FBTXS;
 	}
+
+	// read length
+	uint8_t length = (spi_read_8(regtxflh, err) << 8) | static_cast<uint16_t>(spi_read_8(regtxfll, err)) ;
+	if (err != Error::NO_ERRORS) {
+		return;
+	}
+
+	spi_block_read_8(regfbtxs, length, received_packet, err);
 }
+
 
 void AT86RF215::set_battery_monitor_status(bool status, Error &err) {
 	uint8_t bmdvc = spi_read_8(RF_BMDVC, err) & 0x1F;
@@ -1530,6 +1578,60 @@ void AT86RF215::setup_irq_cfg(bool maskMode, IRQPolarity polarity,
 					| static_cast<uint8_t>(padDriverStrength), err);
 }
 
+void AT86RF215::setup_phy_baseband(Transceiver transceiver, bool continuousTransmit,
+		bool frameSeqFilter, bool transmitterAutoFCS,
+		FrameCheckSequenceType fcsType, bool basebandEnable,
+		PhysicalLayerType phyType, Error &err) {
+	RegisterAddress regphy;
+
+	if (transceiver == Transceiver::RF09) {
+		regphy = BBC0_PC;
+	} else if (transceiver == Transceiver::RF24) {
+		regphy = BBC1_PC;
+	}
+
+	spi_write_8(regphy,
+			(continuousTransmit << 7) | (frameSeqFilter << 6)
+					| (transmitterAutoFCS << 4)
+					| (static_cast<uint8_t>(fcsType) << 3)
+					| (basebandEnable << 2) | static_cast<uint8_t>(phyType),
+			err);
+
+}
+
+
+void AT86RF215::setup_irq_mask(Transceiver transceiver, bool iqIfSynchronizationFailure, bool transceiverError,
+                               bool batteryLow, bool energyDetectionCompletion, bool transceiverReady, bool wakeup,
+                               bool frameBufferLevelIndication, bool agcEnabled, bool agcRelease, bool agcHold,
+                               bool transmitterFrameEnd, bool receiverExtendedMatch, bool receiverAddressMatch,
+                               bool receiverFrameEnd, bool receiverFrameStart, Error &err){
+    RegisterAddress regbbc;
+    RegisterAddress regrf;
+
+    if (transceiver == Transceiver::RF09){
+        regbbc = BBC0_IRQM;
+        regrf = RF09_IRQM;
+    }
+    else if (transceiver == Transceiver::RF24){
+        regbbc = BBC1_IRQM;
+        regrf = RF24_IRQM;
+    }
+
+    spi_write_8(regrf, iqIfSynchronizationFailure << 5 | transceiverError << 4
+                       | batteryLow << 3
+                       | energyDetectionCompletion << 2
+                       | transceiverReady << 1
+                       | wakeup, err);
+
+    spi_write_8(regbbc,
+                frameBufferLevelIndication << 7 | agcEnabled << 6
+                | agcHold << 5 | transmitterFrameEnd << 4
+                | receiverExtendedMatch << 3
+                | receiverAddressMatch << 2
+                | receiverFrameEnd << 1
+                | receiverFrameStart, err);
+}
+
 void AT86RF215::setup(Error &err) {
 	// Check state of RF09 core
 	State state = get_state(Transceiver::RF09, err);
@@ -1551,22 +1653,18 @@ void AT86RF215::setup(Error &err) {
 		return;
 	}
 
-	// Set IRQ interrupts
-	spi_write_8(RegisterAddress::BBC0_IRQM,
-			config.frameBufferLevelIndication09 << 7 | config.agcEnabled09 << 6
-					| config.agcHold09 << 5 | config.transmitterFrameEnd09 << 4
-					| config.receiverExtendedMatch09 << 3
-					| config.receiverAddressMatch09 << 2
-					| config.receiverFrameEnd09 << 1
-					| config.receiverFrameStart09, err);
+    // Set IRQ masks
+    setup_irq_mask(Transceiver::RF09, config.iqIfSynchronizationFailure09, config.trasnceiverError09,
+                   config.batteryLow09, config.energyDetectionCompletion09, config.transceiverReady09,
+                   config.wakeup09, config.frameBufferLevelIndication09, config.agcEnabled09, config.agcRelease09,
+                   config.agcHold09, config.transmitterFrameEnd09, config.receiverExtendedMatch09,
+                   config.receiverAddressMatch09, config.receiverFrameEnd09, config.receiverFrameStart09, err);
 
-	spi_write_8(RegisterAddress::BBC1_IRQM,
-			config.frameBufferLevelIndication24 << 7 | config.agcEnabled24 << 6
-					| config.agcHold24 << 5 | config.transmitterFrameEnd24 << 4
-					| config.receiverExtendedMatch24 << 3
-					| config.receiverAddressMatch24 << 2
-					| config.receiverFrameEnd24 << 1
-					| config.receiverFrameStart24, err);
+    setup_irq_mask(Transceiver::RF24, config.iqIfSynchronizationFailure24, config.trasnceiverError24,
+                   config.batteryLow24, config.energyDetectionCompletion24, config.transceiverReady24,
+                   config.wakeup24, config.frameBufferLevelIndication24, config.agcEnabled24, config.agcRelease24,
+                   config.agcHold24, config.transmitterFrameEnd24, config.receiverExtendedMatch24,
+                   config.receiverAddressMatch24, config.receiverFrameEnd24, config.receiverFrameStart24, err);
 
 	// Set IRQ pin
 	setup_irq_cfg(config.irqMaskMode, config.irqPolarity,
@@ -1585,6 +1683,23 @@ void AT86RF215::setup(Error &err) {
 	if (err != Error::NO_ERRORS) {
 		return;
 	}
+
+	// Setup Physical Layer for Baseband Cores
+	setup_phy_baseband(Transceiver::RF09, config.continuousTransmit09,
+			config.frameCheckSequenceFilter09, config.transmitterAutoFrameCheckSequence09,
+			config.frameCheckSequenceType09, config.baseBandEnable09,
+			config.physicalLayerType09, err);
+	if (err != Error::NO_ERRORS) {
+			return;
+		}
+	setup_phy_baseband(Transceiver::RF24, config.continuousTransmit24,
+				config.frameCheckSequenceFilter24, config.transmitterAutoFrameCheckSequence24,
+				config.frameCheckSequenceType24, config.baseBandEnable24,
+				config.physicalLayerType24, err);
+		if (err != Error::NO_ERRORS) {
+				return;
+			}
+
 	// Set TX front-end
 	setup_tx_frontend(Transceiver::RF09, config.powerAmplifierRampTime09,
 			config.transmitterCutOffFrequency09,
@@ -1668,12 +1783,12 @@ uint8_t AT86RF215::get_irq(Transceiver transceiver, Error &err) {
 }
 
 void AT86RF215::handle_irq(void) {
-	Error err;
+	Error err = Error::NO_ERRORS;
 
 	/* Sub 1-GHz Transceiver */
 
 	// Radio IRQ
-	uint8_t irq = spi_read_8(RegisterAddress::RF09_IRQS, err);
+	volatile uint8_t irq = spi_read_8(RegisterAddress::RF09_IRQS, err);
 	if ((irq & InterruptMask::IFSynchronization) != 0) {
 		// I/Q IF Synchronization Failure handling
 	}
@@ -1683,12 +1798,24 @@ void AT86RF215::handle_irq(void) {
 	if ((irq & InterruptMask::BatteryLow) != 0) {
 		// Battery Low handling
 	}
-	if ((irq & InterruptMask::EnergyDetectionCompletion) != 0) {
-		// Energy Detection Completion handling
-	}
-	if ((irq & InterruptMask::TransceiverReady) != 0) {
-		// Transceiver ready handling
-	}
+    if ((irq & InterruptMask::EnergyDetectionCompletion) != 0) {
+        rx_ongoing = false;
+        cca_ongoing = false;
+        energy_measurement = get_receiver_energy_detection(Transceiver::RF09, err);
+    }
+    if ((irq & InterruptMask::TransceiverReady) != 0) {
+        if (rx_ongoing) {
+            // Switch to TX state once the transceiver is ready to send
+            set_state(Transceiver::RF09, State::RF_RX, err);
+            if (cca_ongoing) {
+                spi_write_8(RF09_EDC, 0x1, err);
+            }
+        }
+        if (tx_ongoing){
+            // Switch to TX state once the transceiver is ready to send
+            set_state(Transceiver::RF09, State::RF_TX, err);
+        }
+    }
 	if ((irq & InterruptMask::Wakeup) != 0) {
 		// Wakeup handling
 	}
@@ -1705,7 +1832,7 @@ void AT86RF215::handle_irq(void) {
 		// AGC Hold handling
 	}
 	if ((irq & InterruptMask::TransmitterFrameEnd) != 0) {
-		// Transmitter Frame End handling
+        tx_ongoing = false;
 	}
 	if ((irq & InterruptMask::ReceiverExtendMatch) != 0) {
 		// Receiver Extended Match handling
@@ -1714,10 +1841,13 @@ void AT86RF215::handle_irq(void) {
 		// Receiver Address Match handling
 	}
 	if ((irq & InterruptMask::ReceiverFrameEnd) != 0) {
-		// Receiver Frame End handling
+		if (rx_ongoing){
+			packetReception(Transceiver::RF09, err);
+			rx_ongoing = false;
+		}
 	}
 	if ((irq & InterruptMask::ReceiverFrameStart) != 0) {
-		// Receiver Frame Start handling
+		rx_ongoing  = true;
 	}
 
 	/* 2.4 GHz Transceiver */
@@ -1734,12 +1864,25 @@ void AT86RF215::handle_irq(void) {
 	if ((irq & InterruptMask::BatteryLow) != 0) {
 		// Battery Low handling
 	}
-	if ((irq & InterruptMask::EnergyDetectionCompletion) != 0) {
-		// Energy Detection Completion handling
-	}
-	if ((irq & InterruptMask::TransceiverReady) != 0) {
-		// Transceiver ready handling
-	}
+    if ((irq & InterruptMask::EnergyDetectionCompletion) != 0) {
+        rx_ongoing = false;
+        cca_ongoing = false;
+        energy_measurement = get_receiver_energy_detection(Transceiver::RF24, err);
+    }
+    if ((irq & InterruptMask::TransceiverReady) != 0) {
+        if (rx_ongoing){
+            // Switch to TX state once the transceiver is ready to send
+            set_state(Transceiver::RF24, State::RF_RX, err);
+            if (cca_ongoing) {
+                spi_write_8(RF24_EDC, 0x1, err);
+            }
+        }
+        if (tx_ongoing){
+            // Switch to TX state once the transceiver is ready to send
+            set_state(Transceiver::RF24, State::RF_TX, err);
+        }
+
+    }
 	if ((irq & InterruptMask::Wakeup) != 0) {
 		// Wakeup handling
 	}
@@ -1753,10 +1896,10 @@ void AT86RF215::handle_irq(void) {
 		// AGC Release handling
 	}
 	if ((irq & InterruptMask::AGCHold) != 0) {
-		// AGC Hold handling
+		agc_held = true;
 	}
 	if ((irq & InterruptMask::TransmitterFrameEnd) != 0) {
-		// Transmitter Frame End handling
+		tx_ongoing = false;
 	}
 	if ((irq & InterruptMask::ReceiverExtendMatch) != 0) {
 		// Receiver Extended Match handling
@@ -1765,10 +1908,14 @@ void AT86RF215::handle_irq(void) {
 		// Receiver Address Match handling
 	}
 	if ((irq & InterruptMask::ReceiverFrameEnd) != 0) {
-		// Receiver Frame End handling
-	}
+        if (rx_ongoing){
+            packetReception(Transceiver::RF24, err);
+            rx_ongoing = false;
+        }
+    }
 	if ((irq & InterruptMask::ReceiverFrameStart) != 0) {
 		// Receiver Frame Start handling
+		rx_ongoing = true;
 	}
 
 }
