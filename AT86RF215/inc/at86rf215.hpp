@@ -1120,7 +1120,7 @@ private:
  	 * @param transceiver		Specifies the transceiver used
 	 * @param err				Pointer to raised error
      */
-    packetReception(Transceiver transceiver, Error &err);
+    void packetReception(Transceiver transceiver, Error &err);
 
     /// Flag indicating that a TX procedure is ongoing
     bool tx_ongoing;
