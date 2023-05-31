@@ -6,6 +6,7 @@
 #include <optional>
 #include <type_traits>
 #include <tuple>
+#include "etl/utility.h"
 
 namespace INA3221 {
     typedef std::pair<uint32_t, uint32_t> VoltageThreshold;
