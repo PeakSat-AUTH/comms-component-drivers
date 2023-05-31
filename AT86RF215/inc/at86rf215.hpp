@@ -1,4 +1,4 @@
-#include <at86rf215_definitions.h>
+#include <at86rf215definitions.hpp>
 #include "stm32h7xx_hal.h"
 #include "at86rf215config.hpp"
 #include <utility>
@@ -20,6 +20,7 @@ enum Error {
 	UKNOWN_DEVICE_PART_NUMBER,
 	INVALID_RSSI_MEASUREMENT,
 	INVALID_AGC_CONTROl_WORD,
+    ONGOING_TRANSMISSION_RECEPTION,
 };
 
 
@@ -37,9 +38,9 @@ public:
 	 *
 	 */
 	AT86RF215(SPI_HandleTypeDef *hspim, const AT86RF215Configuration&& config) :
-			hspi(hspim), config(std::move(config)) {
-	}
-	;
+			hspi(hspim), config(std::move(config)), tx_ongoing(false), rx_ongoing(false),
+			agc_held(false) {
+	};
 
 	/* Writes a byte to a specified address
 	 *
@@ -871,6 +872,7 @@ public:
 
 	int8_t get_receiver_energy_detection(Transceiver transceiver, Error &err);
 
+
 	/* Set transceiver battery monitor status
 	 *
 	 * @param status			Battery monitor status
@@ -1004,7 +1006,7 @@ public:
 	/**
 	 * Sets up internal crystal oscillator
 	 *
-	 * @param fast_start_up		Fast start-up option for TCXO (quicker start-up at the expense of current consumption)
+	 * @param fast_start_up				Fast start-up option for TCXO (quicker start-up at the expense of current consumption)
 	 * @param crystal_trim				Controls trim-capacitor to match load capacitance of external oscillator
 	 * @param err 						Pointer to raised error
 	 */
@@ -1023,13 +1025,34 @@ public:
 	/**
 	 * Sets up IRQ behavior
 	 *
-	 * @param maskMode					Defines whether reasons for IRQ call appear in IRQS register
+	 * @param maskMode				Defines whether reasons for IRQ call appear in IRQS register
 	 * @param polarity				Sets up the IRQ pin polarity (active high or low)
 	 * @param padDriverStrength		Driver strength (mA) of MISO, IRQ and FEA/FEB pins
 	 * @param err					Pointer to returned error
 	 */
 	void setup_irq_cfg(bool maskMode, IRQPolarity irqPolarity,
 			PadDriverStrength padDriverStrength, Error &err);
+
+	/**
+	 * Sets up physical baseband
+	 *
+	 * @param transceiver			Specifies the transceiver used
+	 * @param continousTransmit 	Transmission continues for as long as PC.CTX is set
+	 * @param frameSeqFilter		Successful frame reception IRQ is only triggered if the frame's FCS is valid
+	 * @param transmitterAutoFCS	Define whether the FCS is inserted automatically to the PSU
+	 * @param fcsType				16- or 32-bit FCS
+	 * @param basebandEnable		Sets whether the baseband is enabled (as opposed to the radio mode)
+	 * @param phyType				Defines the physical layer type
+	 * @param err					Pointer to returned error
+	 */
+	void setup_phy_baseband(Transceiver transceiver, bool continuousTransmit, bool frameSeqFilter, bool transmitterAutoFCS,
+			FrameCheckSequenceType fcsType, bool basebandEnable, PhysicalLayerType  phyType, Error &err);
+
+    void setup_irq_mask(Transceiver transceiver, bool iqIfSynchronizationFailure, bool transceiverError,
+        bool batteryLow, bool energyDetectionCompletion, bool transceiverReady, bool wakeup,
+        bool frameBufferLevelIndication, bool agcEnabled, bool agcRelease, bool agcHold,
+        bool transmitterFrameEnd, bool receiverExtendedMatch, bool receiverAddressMatch,
+        bool receiverFrameEnd, bool receiverFrameStart, Error &err);
 
 	/*
 	 * Sets up the target registers based on the default configuration. It accesses *all* writable registers and
@@ -1054,9 +1077,20 @@ public:
 	 */
 	void handle_irq();
 
-private:
-	/*
-	 * Transmit a packet Tx
+    /**
+     * Measures the received energy in the bandwidth specified
+     * @param transceiver       Selected transceiver
+     * @param err               Pointer to raised error
+     */
+    // TODO: Perhaps specify bw here as optional parameter or just control it via the config?
+    void clear_channel_assessment(Transceiver transceiver, Error &err);
+
+
+    AT86RF215Configuration config;
+
+	/**
+	 * Begins transmitting operations for Tx packet and automatically sets the `tx_ongoing` flag to inhibit conflicting
+	 * transmissions. The flag is automatically reset on a frame end interrupt.
 	 *
 	 * @param transceiver		Specifies the transceiver used
 	 * @param packet			Pointer to packet data
@@ -1064,17 +1098,40 @@ private:
 	 * @param err				Pointer to raised error
 	 *
 	 */
-	void transmitBasbandPacketsTx(Transceiver transceiver, uint8_t *packet,
+	void transmitBasebandPacketsTx(Transceiver transceiver, uint8_t *packet,
 			uint16_t length, Error &err);
 
-	/*
-	 * Preparation for transmission
+	/**
+	 * Begins receiving operations for Rx packet
+	 *
+	 * @param transceiver		Specifies the transceiver used
+	 * @param err				Pointer to raised error
 	 */
-	void transmitBasebandPrep(Transceiver transceiver, Error &err);
+	void transmitBasebandPacketsRx(Transceiver transceiver, Error &err);
+
+
+	uint8_t received_packet[2047];
+    uint8_t energy_measurement = 0;
+
+private:
+
+    /**
+     * This is automatically called after triggering the packet reception
+ 	 * @param transceiver		Specifies the transceiver used
+	 * @param err				Pointer to raised error
+     */
+    void packetReception(Transceiver transceiver, Error &err);
+
+    /// Flag indicating that a TX procedure is ongoing
+    bool tx_ongoing;
+    /// Flag indicating that an RX procedure is ongoing
+    bool rx_ongoing;
+    /// Flag indicating that the Clean Channel Assessment procedure is ongoing
+    bool cca_ongoing;
+    /// Flag for checking whether the AGC is locked
+    bool agc_held;
 
 	SPI_HandleTypeDef *hspi;
-
-	AT86RF215Configuration config;
 };
 
 }
