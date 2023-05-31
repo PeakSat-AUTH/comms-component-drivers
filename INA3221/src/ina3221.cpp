@@ -145,6 +145,3 @@ namespace INA3221 {
         }
     }
 }
-
-
-int main() { return 0; }
