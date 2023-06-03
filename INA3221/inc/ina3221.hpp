@@ -268,16 +268,13 @@ namespace INA3221 {
          */
         [[nodiscard]] Error i2c_write(Register address, uint16_t value);
 
-        /// TODO: Replace with platform-specific I2C read request
         /**
          * Reads a given 16-bit register via I2C
          *
          * @param address       Register address
          * @return              read value and error status
          */
-        [[nodiscard]] etl::pair<uint16_t, Error> i2c_read(Register address) {
-            return etl::make_pair<uint16_t, Error>(0, Error::NO_ERRORS);
-        };
+        [[nodiscard]] etl::pair<uint16_t, Error> i2c_read(Register address);
 
         /**
          * Writes to a specific field of the register

@@ -12,6 +12,34 @@ namespace INA3221 {
         HAL_Delay(msec);
     }
 
+    [[nodiscard]] Error INA3221::i2c_write(Register address, uint16_t value) {
+        uint8_t buffer[] = { static_cast<uint8_t>(address),
+                            static_cast<uint8_t>(value & 0x00FF),
+                            static_cast<uint8_t>((value >> 8) & 0x00FF) };
+
+        if (HAL_I2C_Master_Transmit(&hi2c, i2cSlaveAddress << 1, buffer, 3, HAL_MAX_DELAY) != HAL_OK) {
+            return Error::I2C_FAILURE;
+        }
+
+        return Error::NO_ERRORS;
+    }
+
+    [[nodiscard]] etl::pair<uint16_t, Error> INA3221::i2c_read(Register address) {
+        uint8_t buffer[2];
+        auto regAddress = static_cast<uint8_t>(address);
+
+        if (HAL_I2C_Master_Transmit(&hi2c, i2cSlaveAddress << 1, &regAddress, 1, HAL_MAX_DELAY) != HAL_OK) {
+            return etl::make_pair(NULL, Error::I2C_FAILURE);
+        }
+
+        if (HAL_I2C_Master_Receive(&hi2c, i2cSlaveAddress << 1, buffer, 2, HAL_MAX_DELAY) != HAL_OK) {
+            return etl::make_pair(NULL, Error::I2C_FAILURE);
+        }
+
+        uint16_t received = (buffer[0] << 8) | buffer[1];
+        return etl::make_pair(received, Error::NO_ERRORS);
+    }
+
 
     Error INA3221::write_register_field(Register address, uint16_t value, uint16_t mask, uint16_t shift) {
         auto[reg, err] = i2c_read(address);
