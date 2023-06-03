@@ -237,7 +237,7 @@ namespace INA3221 {
 
     private:
         // TODO: Replace with HAL delay
-        __attribute__ ((__weak__)) void wait(uint16_t msec);
+        void wait(uint16_t msec);
 
         /// TODO: Replace with platform-specific I2C write request
         /**
@@ -247,7 +247,7 @@ namespace INA3221 {
          * @param value         16-bit value to write to
          * @return              Error status
          */
-        [[nodiscard]] __attribute__ ((__weak__)) Error i2c_write(Register address, uint16_t value);
+        [[nodiscard]] Error i2c_write(Register address, uint16_t value);
 
         /// TODO: Replace with platform-specific I2C read request
         /**
@@ -256,7 +256,7 @@ namespace INA3221 {
          * @param address       Register address
          * @return              read value and error status
          */
-        [[nodiscard]] __attribute__ ((__weak__)) etl::pair<uint16_t, Error> i2c_read(Register address) {
+        [[nodiscard]] etl::pair<uint16_t, Error> i2c_read(Register address) {
             return etl::make_pair<uint16_t, Error>(0, Error::NO_ERRORS);
         };
 
