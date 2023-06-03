@@ -23,8 +23,8 @@ namespace INA3221 {
     }
 
     [[nodiscard]] etl::pair<ChannelMeasurement, ChannelMeasurement> INA3221::getMeasurement(){
-        ChannelMeasurement busMeasurement = std::exchange(busVoltage, std::make_tuple(NULL, NULL, NULL));
-        ChannelMeasurement shuntMeasurement = std::exchange(shuntVoltage, std::make_tuple(NULL, NULL, NULL));
+        ChannelMeasurement busMeasurement = etl::exchange(busVoltage, std::make_tuple(NULL, NULL, NULL));
+        ChannelMeasurement shuntMeasurement = etl::exchange(shuntVoltage, std::make_tuple(NULL, NULL, NULL));
         return etl::make_pair(busMeasurement, shuntMeasurement);
     }
 
