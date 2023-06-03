@@ -14,6 +14,18 @@ namespace INA3221 {
 
     typedef std::tuple<std::optional<uint32_t>, std::optional<uint32_t>, std::optional<uint32_t>> ChannelMeasurement;
 
+    /// Device I2C addresses
+    enum class I2CAddress {
+        /// Connected to GND
+        Address1 = 0x40,
+        /// Connected to VS
+        Address2 = 0x41,
+        /// Connected to SDA
+        Address3 = 0x42,
+        /// Connected to SCL
+        Address4 = 0x43
+    };
+
     /// Register address
     enum class Register {
         /// Configuration
