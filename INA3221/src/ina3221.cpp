@@ -22,10 +22,10 @@ namespace INA3221 {
         return write_register_field(Register::CONFG, (uint16_t) operatingMode, 0x7, 0);
     }
 
-    [[nodiscard]] std::pair<ChannelMeasurement, ChannelMeasurement> INA3221::getMeasurement(){
+    [[nodiscard]] etl::pair<ChannelMeasurement, ChannelMeasurement> INA3221::getMeasurement(){
         ChannelMeasurement busMeasurement = std::exchange(busVoltage, std::make_tuple(NULL, NULL, NULL));
         ChannelMeasurement shuntMeasurement = std::exchange(shuntVoltage, std::make_tuple(NULL, NULL, NULL));
-        return std::make_pair(busMeasurement, shuntMeasurement);
+        return etl::make_pair(busMeasurement, shuntMeasurement);
     }
 
     Error INA3221::setup() {

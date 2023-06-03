@@ -9,7 +9,7 @@
 #include "etl/utility.h"
 
 namespace INA3221 {
-    typedef std::pair<uint32_t, uint32_t> VoltageThreshold;
+    typedef etl::pair<uint32_t, uint32_t> VoltageThreshold;
 
     typedef std::tuple<std::optional<uint32_t>, std::optional<uint32_t>, std::optional<uint32_t>> ChannelMeasurement;
 
@@ -226,7 +226,7 @@ namespace INA3221 {
          * another measurement. The bus and channel voltage are reset to avoid reading duplicates.
          * TODO: Also attach timestamps?
          */
-        [[nodiscard]] std::pair<ChannelMeasurement, ChannelMeasurement> getMeasurement();
+        [[nodiscard]] etl::pair<ChannelMeasurement, ChannelMeasurement> getMeasurement();
 
         INA3221(const INA3221Config &&config, Error &err) :
                 config(std::move(config)) {
@@ -256,8 +256,8 @@ namespace INA3221 {
          * @param address       Register address
          * @return              read value and error status
          */
-        [[nodiscard]] __attribute__ ((__weak__)) std::pair<uint16_t, Error> i2c_read(Register address) {
-            return std::make_pair<uint16_t, Error>(0, Error::NO_ERRORS);
+        [[nodiscard]] __attribute__ ((__weak__)) etl::pair<uint16_t, Error> i2c_read(Register address) {
+            return etl::make_pair<uint16_t, Error>(0, Error::NO_ERRORS);
         };
 
         /**
