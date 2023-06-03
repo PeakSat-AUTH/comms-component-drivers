@@ -81,7 +81,7 @@ namespace INA3221 {
     /// Error status
     enum class Error {
         NO_ERRORS = 0,
-        I2C_FAIlURE,
+        I2C_FAILURE,
         INVALID_STATE,
     };
 
