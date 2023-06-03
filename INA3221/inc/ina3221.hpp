@@ -269,7 +269,7 @@ namespace INA3221 {
          * @param value         16-bit value to write to
          * @return              Error status
          */
-        [[nodiscard]] Error i2c_write(Register address, uint16_t value);
+        [[nodiscard]] Error i2cWrite(Register address, uint16_t value);
 
         /**
          * Reads a given 16-bit register via I2C
@@ -277,7 +277,7 @@ namespace INA3221 {
          * @param address       Register address
          * @return              read value and error status
          */
-        [[nodiscard]] etl::pair<uint16_t, Error> i2c_read(Register address);
+        [[nodiscard]] etl::pair<uint16_t, Error> i2cRead(Register address);
 
         /**
          * Writes to a specific field of the register
@@ -287,14 +287,14 @@ namespace INA3221 {
          * @param shift         Shift bits - determines the register field to write to
          * @return              Error status
          */
-        [[nodiscard]] Error write_register_field(Register address, uint16_t value, uint16_t mask, uint16_t shift);
+        [[nodiscard]] Error writeRegisterField(Register address, uint16_t value, uint16_t mask, uint16_t shift);
 
         /// Bus voltage across the three measured channels (NULL values indicate that the channel isn't currently monitored)
         ChannelMeasurement busVoltage{NULL, NULL, NULL};
         /// Shunt voltage across the three measured channels (NULL values indicate that the channel isn't currently monitored)
         ChannelMeasurement shuntVoltage{NULL, NULL, NULL};
 
-        void handle_irq(void);
+        void handleIrq(void);
 
         INA3221Config config;
     };

@@ -2,7 +2,7 @@
 
 namespace INA3221 {
 
-    uint16_t voltage_conversion(int32_t v, uint16_t scale, uint16_t shift) {
+    uint16_t voltageConversion(int32_t v, uint16_t scale, uint16_t shift) {
         return (v < 0) ?
                (~(std::abs(v) / scale << shift) + 1 & 0x7FFF) | 0x8000 :
                (v / scale << shift);
@@ -12,7 +12,7 @@ namespace INA3221 {
         HAL_Delay(msec);
     }
 
-    [[nodiscard]] Error INA3221::i2c_write(Register address, uint16_t value) {
+    [[nodiscard]] Error INA3221::i2cWrite(Register address, uint16_t value) {
         uint8_t buffer[] = { static_cast<uint8_t>(address),
                             static_cast<uint8_t>(value & 0x00FF),
                             static_cast<uint8_t>((value >> 8) & 0x00FF) };
@@ -24,7 +24,7 @@ namespace INA3221 {
         return Error::NO_ERRORS;
     }
 
-    [[nodiscard]] etl::pair<uint16_t, Error> INA3221::i2c_read(Register address) {
+    [[nodiscard]] etl::pair<uint16_t, Error> INA3221::i2cRead(Register address) {
         uint8_t buffer[2];
         auto regAddress = static_cast<uint8_t>(address);
 
@@ -41,18 +41,18 @@ namespace INA3221 {
     }
 
 
-    Error INA3221::write_register_field(Register address, uint16_t value, uint16_t mask, uint16_t shift) {
-        auto[reg, err] = i2c_read(address);
+    Error INA3221::writeRegisterField(Register address, uint16_t value, uint16_t mask, uint16_t shift) {
+        auto[reg, err] = i2cRead(address);
         if (err != Error::NO_ERRORS) {
             return err;
         }
         uint16_t val = (reg & ~mask) | (value << shift);
-        err = i2c_write(address, val);
+        err = i2cWrite(address, val);
         return err;
     }
 
     [[nodiscard]] Error INA3221::changeOperatingMode(OperatingMode operatingMode){
-        return write_register_field(Register::CONFG, (uint16_t) operatingMode, 0x7, 0);
+        return writeRegisterField(Register::CONFG, (uint16_t) operatingMode, 0x7, 0);
     }
 
     [[nodiscard]] etl::pair<ChannelMeasurement, ChannelMeasurement> INA3221::getMeasurement(){
@@ -68,52 +68,52 @@ namespace INA3221 {
 
         Error err;
 
-        err = i2c_write(Register::CONFG, mode);
+        err = i2cWrite(Register::CONFG, mode);
 
         if (err != Error::NO_ERRORS) { return err; }
 
         auto[criticalThreshold1, warningThreshold1] = config.threshold1;
 
-        err = i2c_write(Register::CH1CA, voltage_conversion(criticalThreshold1, 40, 3));
+        err = i2cWrite(Register::CH1CA, voltageConversion(criticalThreshold1, 40, 3));
         if (err != Error::NO_ERRORS) { return err; }
 
-        err = i2c_write(Register::CH1WA, voltage_conversion(warningThreshold1, 40, 3));
+        err = i2cWrite(Register::CH1WA, voltageConversion(warningThreshold1, 40, 3));
         if (err != Error::NO_ERRORS) { return err; }
 
         auto[criticalThreshold2, warningThreshold2] = config.threshold2;
 
-        err = i2c_write(Register::CH2CA, voltage_conversion(criticalThreshold2, 40, 3));
+        err = i2cWrite(Register::CH2CA, voltageConversion(criticalThreshold2, 40, 3));
         if (err != Error::NO_ERRORS) { return err; }
 
-        err = i2c_write(Register::CH2WA, voltage_conversion(warningThreshold2, 40, 3));
+        err = i2cWrite(Register::CH2WA, voltageConversion(warningThreshold2, 40, 3));
         if (err != Error::NO_ERRORS) { return err; }
 
         auto[criticalThreshold3, warningThreshold3] = config.threshold3;
 
-        err = i2c_write(Register::CH3CA, voltage_conversion(criticalThreshold3, 40, 3));
+        err = i2cWrite(Register::CH3CA, voltageConversion(criticalThreshold3, 40, 3));
         if (err != Error::NO_ERRORS) { return err; }
 
-        err = i2c_write(Register::CH3WA, voltage_conversion(warningThreshold3, 40, 3));
+        err = i2cWrite(Register::CH3WA, voltageConversion(warningThreshold3, 40, 3));
         if (err != Error::NO_ERRORS) { return err; }
 
-        err = i2c_write(Register::SHVLL, voltage_conversion(config.shuntVoltageSumLimit, 40, 1));
+        err = i2cWrite(Register::SHVLL, voltageConversion(config.shuntVoltageSumLimit, 40, 1));
         if (err != Error::NO_ERRORS) { return err; }
 
-        err = i2c_write(Register::PWRVU, voltage_conversion(config.powerValidUpper, 8000, 1));
+        err = i2cWrite(Register::PWRVU, voltageConversion(config.powerValidUpper, 8000, 1));
         if (err != Error::NO_ERRORS) { return err; }
 
-        err = i2c_write(Register::PWRVL, voltage_conversion(config.powerValidLower, 8000, 1));
+        err = i2cWrite(Register::PWRVL, voltageConversion(config.powerValidLower, 8000, 1));
         if (err != Error::NO_ERRORS) { return err; }
 
-        err = i2c_write(Register::MASKE,
-                        (config.summationChannelControl1 << 14) | (config.summationChannelControl2 << 13)
-                        | (config.summationChannelControl3 << 12) | (config.enableWarnings << 11) |
-                        (config.enableCritical << 10));
+        err = i2cWrite(Register::MASKE,
+                       (config.summationChannelControl1 << 14) | (config.summationChannelControl2 << 13)
+                       | (config.summationChannelControl3 << 12) | (config.enableWarnings << 11) |
+                       (config.enableCritical << 10));
         return err;
     }
 
-    void INA3221::handle_irq(void) {
-        auto[value, err] = i2c_read(Register::MASKE);
+    void INA3221::handleIrq(void) {
+        auto[value, err] = i2cRead(Register::MASKE);
 
         if (value & 0x0200){
             // Send critical alert of channel 1 to FDIR
@@ -143,13 +143,13 @@ namespace INA3221 {
             //
         }
         if (value & 0x0001){
-            uint16_t bus_voltage1 = i2c_read(Register::CH1BV).first;
-            uint16_t bus_voltage2 = i2c_read(Register::CH2BV).first;
-            uint16_t bus_voltage3 = i2c_read(Register::CH3BV).first;
+            uint16_t bus_voltage1 = i2cRead(Register::CH1BV).first;
+            uint16_t bus_voltage2 = i2cRead(Register::CH2BV).first;
+            uint16_t bus_voltage3 = i2cRead(Register::CH3BV).first;
 
-            uint16_t shunt_voltage1 = i2c_read(Register::CH1SV).first;
-            uint16_t shunt_voltage2 = i2c_read(Register::CH2SV).first;
-            uint16_t shunt_voltage3 = i2c_read(Register::CH3SV).first;
+            uint16_t shunt_voltage1 = i2cRead(Register::CH1SV).first;
+            uint16_t shunt_voltage2 = i2cRead(Register::CH2SV).first;
+            uint16_t shunt_voltage3 = i2cRead(Register::CH3SV).first;
 
 
             // Check if bus voltage is monitored
