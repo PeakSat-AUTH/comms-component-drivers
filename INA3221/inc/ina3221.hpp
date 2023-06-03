@@ -237,6 +237,12 @@ namespace INA3221 {
         ~INA3221() {};
 
     private:
+
+        /**
+         * HAL I2C Handle
+         */
+        I2C_HandleTypeDef hi2c;
+
         static void wait(uint32_t msec);
 
         /// TODO: Replace with platform-specific I2C write request
