@@ -255,9 +255,10 @@ namespace INA3221 {
          */
         I2C_HandleTypeDef hi2c;
 
+        uint16_t i2cSlaveAddress;
+
         static void wait(uint32_t msec);
 
-        /// TODO: Replace with platform-specific I2C write request
         /**
          * Writes two bytes in the given register via I2C
          *
