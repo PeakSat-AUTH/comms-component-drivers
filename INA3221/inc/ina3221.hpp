@@ -255,6 +255,9 @@ namespace INA3221 {
          */
         I2C_HandleTypeDef hi2c;
 
+        /**
+         * I2C Bus Slave Address
+         */
         uint16_t i2cSlaveAddress;
 
         static void wait(uint32_t msec);
