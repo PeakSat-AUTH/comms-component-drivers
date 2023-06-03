@@ -8,6 +8,11 @@ namespace INA3221 {
                (v / scale << shift);
     }
 
+     void INA3221::wait(uint32_t msec) {
+        HAL_Delay(msec);
+    }
+
+
     Error INA3221::write_register_field(Register address, uint16_t value, uint16_t mask, uint16_t shift) {
         auto[reg, err] = i2c_read(address);
         if (err != Error::NO_ERRORS) {

@@ -7,6 +7,7 @@
 #include <type_traits>
 #include <tuple>
 #include "etl/utility.h"
+#include "main.h"
 
 namespace INA3221 {
     typedef etl::pair<uint32_t, uint32_t> VoltageThreshold;
@@ -236,8 +237,7 @@ namespace INA3221 {
         ~INA3221() {};
 
     private:
-        // TODO: Replace with HAL delay
-        void wait(uint16_t msec);
+        static void wait(uint32_t msec);
 
         /// TODO: Replace with platform-specific I2C write request
         /**
