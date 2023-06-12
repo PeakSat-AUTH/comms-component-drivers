@@ -7,6 +7,7 @@
 #include <type_traits>
 #include <tuple>
 #include "etl/utility.h"
+#include "etl/expected.h"
 #include "main.h"
 
 namespace INA3221 {
@@ -221,7 +222,7 @@ namespace INA3221 {
          * Sets the config register as per the passed config
          * @return Raised error
          */
-        [[nodiscard]] Error setup();
+        [[nodiscard]] etl::expected<void, Error> setup();
 
         /**
          * Triggers a measurement of bus or shunt voltage for the active channels. Note that the driver halts until we
@@ -231,7 +232,7 @@ namespace INA3221 {
          * time set. For single-shot mode, a measurement will be taken only once and the register will need to be
          * re-written in order to get a new measurements
          */
-        [[nodiscard]] Error changeOperatingMode(OperatingMode operatingMode);
+        [[nodiscard]] etl::expected<void, Error> changeOperatingMode(OperatingMode operatingMode);
 
         /**
          * Get previous measurement. If the driver is set in continuous mode then this value should be automatically
@@ -241,9 +242,12 @@ namespace INA3221 {
          */
         [[nodiscard]] etl::pair<ChannelMeasurement, ChannelMeasurement> getMeasurement();
 
-        INA3221(const INA3221Config &&config, Error &err) :
-                config(std::move(config)) {
-            setup();
+        INA3221(I2C_HandleTypeDef &hi2c, INA3221Config &config, Error &err) :
+                hi2c(hi2c), config(std::move(config)) {
+            auto tmp = setup();
+            if (!tmp.has_value()) {
+                err = tmp.error();
+            }
         };
 
         ~INA3221() {};
@@ -258,7 +262,7 @@ namespace INA3221 {
         /**
          * I2C Bus Slave Address
          */
-        uint16_t i2cSlaveAddress;
+        static constexpr uint16_t i2cSlaveAddress = static_cast<uint16_t>(I2CAddress::Address1);
 
         static void wait(uint32_t msec);
 
@@ -269,7 +273,7 @@ namespace INA3221 {
          * @param value         16-bit value to write to
          * @return              Error status
          */
-        [[nodiscard]] Error i2cWrite(Register address, uint16_t value);
+        [[nodiscard]] etl::expected<void, Error> i2cWrite(Register address, uint16_t value);
 
         /**
          * Reads a given 16-bit register via I2C
@@ -277,7 +281,8 @@ namespace INA3221 {
          * @param address       Register address
          * @return              read value and error status
          */
-        [[nodiscard]] etl::pair<uint16_t, Error> i2cRead(Register address);
+
+        [[nodiscard]] etl::expected<uint16_t, Error> i2cRead(Register address);
 
         /**
          * Writes to a specific field of the register
@@ -287,7 +292,7 @@ namespace INA3221 {
          * @param shift         Shift bits - determines the register field to write to
          * @return              Error status
          */
-        [[nodiscard]] Error writeRegisterField(Register address, uint16_t value, uint16_t mask, uint16_t shift);
+        [[nodiscard]] etl::expected<void, Error> writeRegisterField(Register address, uint16_t value, uint16_t mask, uint16_t shift);
 
         /// Bus voltage across the three measured channels (NULL values indicate that the channel isn't currently monitored)
         ChannelMeasurement busVoltage{NULL, NULL, NULL};
@@ -302,3 +307,4 @@ namespace INA3221 {
 
 
 #endif //COMPONENT_DRIVERS_INA3221_HPP
+
