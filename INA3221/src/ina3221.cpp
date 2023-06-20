@@ -12,7 +12,7 @@ namespace INA3221 {
         HAL_Delay(msec);
     }
 
-    [[nodiscard]] etl::expected<void, Error> INA3221::i2cWrite(Register address, uint16_t value) {
+     etl::expected<void, Error> INA3221::i2cWrite(Register address, uint16_t value) {
         uint8_t buffer[] = { static_cast<uint8_t>(address),
                             static_cast<uint8_t>(value & 0xFF),
                             static_cast<uint8_t>(value >> 8) };
@@ -22,7 +22,7 @@ namespace INA3221 {
         }
     }
 
-    [[nodiscard]] etl::expected<uint16_t, Error> INA3221::i2cRead(Register address) {
+     etl::expected<uint16_t, Error> INA3221::i2cRead(Register address) {
         uint8_t buffer[2];
         auto regAddress = static_cast<uint8_t>(address);
 
@@ -38,6 +38,10 @@ namespace INA3221 {
         return received;
     }
 
+     etl::expected<uint16_t, Error> INA3221::getConfigRegister() {
+        return i2cRead(Register::CONFG);
+    }
+
 
     etl::expected<void, Error> INA3221::writeRegisterField(Register address, uint16_t value, uint16_t mask, uint16_t shift) {
         auto reg = i2cRead(address);
@@ -49,60 +53,109 @@ namespace INA3221 {
         return i2cWrite(address, val);
     }
 
-    [[nodiscard]] etl::expected<void, Error> INA3221::changeOperatingMode(OperatingMode operatingMode){
+     etl::expected<void, Error> INA3221::changeOperatingMode(OperatingMode operatingMode) {
         return writeRegisterField(Register::CONFG, (uint16_t) operatingMode, 0x7, 0);
     }
 
-    [[nodiscard]] etl::pair<ChannelMeasurement, ChannelMeasurement> INA3221::getMeasurement(){
+     etl::pair<ChannelMeasurement, ChannelMeasurement> INA3221::getMeasurement() {
         ChannelMeasurement busMeasurement = etl::exchange(busVoltage, std::make_tuple(std::nullopt, std::nullopt, std::nullopt));
-        ChannelMeasurement shuntMeasurement = etl::exchange(shuntVoltage, std::make_tuple(NULL, NULL, NULL));
+        ChannelMeasurement shuntMeasurement = etl::exchange(shuntVoltage, std::make_tuple(std::nullopt, std::nullopt, std::nullopt));
         return etl::make_pair(busMeasurement, shuntMeasurement);
     }
 
+     etl::expected<float, Error> INA3221::getShuntVoltage(uint8_t channel) {
+        uint8_t regAddress = static_cast<uint8_t>(Register::CH1SV) + (channel - 1)*2;
+
+//        auto regValue = i2cRead(static_cast<Register>(regAddress));
+        auto regValue = i2cRead(static_cast<Register>(regAddress));
+
+        if (!regValue.has_value()) {
+//            return etl::expected<float, Error>(etl::unexpected<Error>(regValue.error()));
+            return etl::expected<float, Error>(etl::unexpected<Error>(regValue.error()));
+        }
+
+        auto scaledVolts = static_cast<int16_t>(regValue.value());
+//        float converter = 1.0;
+        scaledVolts >>= 3;
+        float converter = 40.f/1e3;
+        return scaledVolts * converter;
+//        return scaledVolts;
+    }
+
+     etl::expected<float, Error> INA3221::getBusVoltage(uint8_t channel) {
+        uint8_t regAddress = static_cast<uint8_t>(Register::CH1BV) + (channel - 1)*2;
+
+        auto regValue = i2cRead(static_cast<Register>(regAddress));
+
+//        auto regValue = i2cRead(Register::CH1BV);
+
+        if (!regValue.has_value()) {
+            return etl::expected<float, Error>(etl::unexpected<Error>(regValue.error()));
+        }
+
+        auto scaledVolts = static_cast<int16_t>(regValue.value());
+        scaledVolts >>= 1;
+        float converter = 8.f;
+        return scaledVolts * converter;
+    }
+
+     etl::expected<uint16_t, Error> INA3221::getDieID() {
+        return i2cRead(Register::DIEID);
+    }
+
+     etl::expected<uint16_t, Error> INA3221::getManID() {
+        return i2cRead(Register::MFRID);
+    }
+
     etl::expected<void, Error> INA3221::setup() {
-        uint16_t mode = (config.enableChannel1 << 14) | (config.enableChannel2 << 13) | (config.enableChannel3 << 12) |
-                        ((uint16_t) config.averagingMode << 10) | ((uint16_t) config.busVoltageTime << 6) |
-                        ((uint16_t) config.shuntVoltageTime << 3) | ((uint16_t) config.operatingMode);
+//        uint16_t mode = (config.enableChannel1 << 14) | (config.enableChannel2 << 13) | (config.enableChannel3 << 12) |
+//                        ((uint16_t) config.averagingMode << 10) | ((uint16_t) config.busVoltageTime << 6) |
+//                        ((uint16_t) config.shuntVoltageTime << 3) | ((uint16_t) config.operatingMode);
+//        uint16_t mode = 0x7127;
+        uint16_t mode = 0x7123;
+//        return i2cWrite(Register::CONFG, mode);
 
         auto err = i2cWrite(Register::CONFG, mode);
-        if (!err.has_value()) { return err; }
+        if (!err.has_value()) {
+            return err;
+        }
 
-        auto[criticalThreshold1, warningThreshold1] = config.threshold1;
-
-        err = i2cWrite(Register::CH1CA, voltageConversion(criticalThreshold1, 40, 3));
-        if (!err.has_value()) { return err; }
-
-        err = i2cWrite(Register::CH1WA, voltageConversion(warningThreshold1, 40, 3));
-
-        auto[criticalThreshold2, warningThreshold2] = config.threshold2;
-
-        err = i2cWrite(Register::CH2CA, voltageConversion(criticalThreshold2, 40, 3));
-        if (!err.has_value()) { return err; }
-
-        err = i2cWrite(Register::CH2WA, voltageConversion(warningThreshold2, 40, 3));
-        if (!err.has_value()) { return err; }
-
-        auto[criticalThreshold3, warningThreshold3] = config.threshold3;
-
-        err = i2cWrite(Register::CH3CA, voltageConversion(criticalThreshold3, 40, 3));
-        if (!err.has_value()) { return err; }
-
-        err = i2cWrite(Register::CH3WA, voltageConversion(warningThreshold3, 40, 3));
-        if (!err.has_value()) { return err; }
-
-        err = i2cWrite(Register::SHVLL, voltageConversion(config.shuntVoltageSumLimit, 40, 1));
-        if (!err.has_value()) { return err; }
-
-        err = i2cWrite(Register::PWRVU, voltageConversion(config.powerValidUpper, 8000, 1));
-        if (!err.has_value()) { return err; }
-
-        err = i2cWrite(Register::PWRVL, voltageConversion(config.powerValidLower, 8000, 1));
-        if (!err.has_value()) { return err; }
-
-        err = i2cWrite(Register::MASKE,
-                       (config.summationChannelControl1 << 14) | (config.summationChannelControl2 << 13)
-                       | (config.summationChannelControl3 << 12) | (config.enableWarnings << 11) |
-                       (config.enableCritical << 10));
+//        auto[criticalThreshold1, warningThreshold1] = config.threshold1;
+//
+//        err = i2cWrite(Register::CH1CA, voltageConversion(criticalThreshold1, 40, 3));
+//        if (!err.has_value()) { return err; }
+//
+//        err = i2cWrite(Register::CH1WA, voltageConversion(warningThreshold1, 40, 3));
+//
+//        auto[criticalThreshold2, warningThreshold2] = config.threshold2;
+//
+//        err = i2cWrite(Register::CH2CA, voltageConversion(criticalThreshold2, 40, 3));
+//        if (!err.has_value()) { return err; }
+//
+//        err = i2cWrite(Register::CH2WA, voltageConversion(warningThreshold2, 40, 3));
+//        if (!err.has_value()) { return err; }
+//
+//        auto[criticalThreshold3, warningThreshold3] = config.threshold3;
+//
+//        err = i2cWrite(Register::CH3CA, voltageConversion(criticalThreshold3, 40, 3));
+//        if (!err.has_value()) { return err; }
+//
+//        err = i2cWrite(Register::CH3WA, voltageConversion(warningThreshold3, 40, 3));
+//        if (!err.has_value()) { return err; }
+//
+//        err = i2cWrite(Register::SHVLL, voltageConversion(config.shuntVoltageSumLimit, 40, 1));
+//        if (!err.has_value()) { return err; }
+//
+//        err = i2cWrite(Register::PWRVU, voltageConversion(config.powerValidUpper, 8000, 1));
+//        if (!err.has_value()) { return err; }
+//
+//        err = i2cWrite(Register::PWRVL, voltageConversion(config.powerValidLower, 8000, 1));
+//        if (!err.has_value()) { return err; }
+//
+//        err = i2cWrite(Register::MASKE,
+//                       (config.summationChannelControl1 << 14) | (config.summationChannelControl2 << 13)
+//                       | (config.summationChannelControl3 << 12) | (config.enableWarnings << 11) |
+//                       (config.enableCritical << 10));
     }
 
     void INA3221::handleIrq(void) {

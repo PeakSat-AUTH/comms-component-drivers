@@ -195,7 +195,7 @@ namespace INA3221 {
          *  This register also controls whether this is applies only to shunt voltage, bus voltage
          *  or both.
          */
-        OperatingMode operatingMode = OperatingMode::POWER_DOWN;
+        OperatingMode operatingMode = OperatingMode::SHUNT_BUS_VOLTAGE_SS;
 
         /// Shunt voltage threshold for critical and warning alert for channel1 [μV]
         VoltageThreshold threshold1;
@@ -222,7 +222,7 @@ namespace INA3221 {
          * Sets the config register as per the passed config
          * @return Raised error
          */
-        [[nodiscard]] etl::expected<void, Error> setup();
+         etl::expected<void, Error> setup();
 
         /**
          * Triggers a measurement of bus or shunt voltage for the active channels. Note that the driver halts until we
@@ -232,7 +232,7 @@ namespace INA3221 {
          * time set. For single-shot mode, a measurement will be taken only once and the register will need to be
          * re-written in order to get a new measurements
          */
-        [[nodiscard]] etl::expected<void, Error> changeOperatingMode(OperatingMode operatingMode);
+         etl::expected<void, Error> changeOperatingMode(OperatingMode operatingMode);
 
         /**
          * Get previous measurement. If the driver is set in continuous mode then this value should be automatically
@@ -240,9 +240,19 @@ namespace INA3221 {
          * another measurement. The bus and channel voltage are reset to avoid reading duplicates.
          * TODO: Also attach timestamps?
          */
-        [[nodiscard]] etl::pair<ChannelMeasurement, ChannelMeasurement> getMeasurement();
+         etl::pair<ChannelMeasurement, ChannelMeasurement> getMeasurement();
 
-        INA3221(I2C_HandleTypeDef &hi2c, INA3221Config &config, Error &err) :
+         etl::expected<float, Error> getShuntVoltage(uint8_t channel);
+
+         etl::expected<float, Error> getBusVoltage(uint8_t channel);
+
+         etl::expected<uint16_t, Error> getDieID();
+
+         etl::expected<uint16_t, Error> getManID();
+
+         etl::expected<uint16_t, Error> getConfigRegister();
+
+        INA3221(I2C_HandleTypeDef &hi2c, const INA3221Config &config, Error &err) :
                 hi2c(hi2c), config(std::move(config)) {
             auto tmp = setup();
             if (!tmp.has_value()) {
@@ -273,7 +283,7 @@ namespace INA3221 {
          * @param value         16-bit value to write to
          * @return              Error status
          */
-        [[nodiscard]] etl::expected<void, Error> i2cWrite(Register address, uint16_t value);
+         etl::expected<void, Error> i2cWrite(Register address, uint16_t value);
 
         /**
          * Reads a given 16-bit register via I2C
@@ -282,7 +292,7 @@ namespace INA3221 {
          * @return              read value and error status
          */
 
-        [[nodiscard]] etl::expected<uint16_t, Error> i2cRead(Register address);
+         etl::expected<uint16_t, Error> i2cRead(Register address);
 
         /**
          * Writes to a specific field of the register
@@ -292,7 +302,7 @@ namespace INA3221 {
          * @param shift         Shift bits - determines the register field to write to
          * @return              Error status
          */
-        [[nodiscard]] etl::expected<void, Error> writeRegisterField(Register address, uint16_t value, uint16_t mask, uint16_t shift);
+         etl::expected<void, Error> writeRegisterField(Register address, uint16_t value, uint16_t mask, uint16_t shift);
 
         /// Bus voltage across the three measured channels (NULL values indicate that the channel isn't currently monitored)
         ChannelMeasurement busVoltage{NULL, NULL, NULL};
