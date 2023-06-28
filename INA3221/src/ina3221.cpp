@@ -17,7 +17,7 @@ namespace INA3221 {
                             static_cast<uint8_t>(value & 0xFF),
                             static_cast<uint8_t>(value >> 8) };
 
-        if (HAL_I2C_Master_Transmit(&hi2c, i2cSlaveAddress << 1, buffer, 3, HAL_MAX_DELAY) != HAL_OK) {
+        if (HAL_I2C_Master_Transmit(&hi2c, i2cSlaveAddress << 1, buffer, 3, 1000) != HAL_OK) {
             return etl::expected<void, Error>(etl::unexpected<Error>(Error::I2C_FAILURE));
         }
     }
@@ -26,11 +26,11 @@ namespace INA3221 {
         uint8_t buffer[2];
         auto regAddress = static_cast<uint8_t>(address);
 
-        if (HAL_I2C_Master_Transmit(&hi2c, i2cSlaveAddress << 1, &regAddress, 1, HAL_MAX_DELAY) != HAL_OK) {
+        if (HAL_I2C_Master_Transmit(&hi2c, i2cSlaveAddress << 1, &regAddress, 1, 1000) != HAL_OK) {
             return etl::expected<uint16_t, Error>(etl::unexpected<Error>(Error::I2C_FAILURE));
         }
 
-        if (HAL_I2C_Master_Receive(&hi2c, i2cSlaveAddress << 1, buffer, 2, HAL_MAX_DELAY) != HAL_OK) {
+        if (HAL_I2C_Master_Receive(&hi2c, i2cSlaveAddress << 1, buffer, 2, 1000) != HAL_OK) {
             return etl::expected<uint16_t, Error>(etl::unexpected<Error>(Error::I2C_FAILURE));
         }
 
