@@ -95,10 +95,11 @@ namespace INA3221 {
     }
 
     etl::expected<float, Error> INA3221::getCurrent(uint8_t channel) {
-        auto ret = getShuntVoltage(channel); 
-        if(!ret.has_value()) { return ret; } 
+        auto mVolts = getShuntVoltage(channel); 
+        if(!mVolts.has_value()) { return mVolts; } 
 
-        return shuntResistor * ret.value();
+        float mAmpere = mVolts/shuntResistor;  
+        return mAmpere; 
     }
 
     etl::expected<uint16_t, Error> INA3221::getDieID() {
