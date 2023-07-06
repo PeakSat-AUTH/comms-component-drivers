@@ -98,7 +98,7 @@ namespace INA3221 {
         auto mVolts = getShuntVoltage(channel); 
         if(!mVolts.has_value()) { return mVolts; } 
 
-        float mAmpere = mVolts/shuntResistor;  
+        float mAmpere = mVolts.value()/shuntResistor;  
         return mAmpere; 
     }
 
