@@ -1,3 +1,5 @@
+#pragma once
+
 #include <at86rf215definitions.hpp>
 #include "stm32h7xx_hal.h"
 #include "at86rf215config.hpp"
