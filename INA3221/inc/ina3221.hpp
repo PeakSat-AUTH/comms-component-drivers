@@ -195,7 +195,7 @@ namespace INA3221 {
          *  This register also controls whether this is applies only to shunt voltage, bus voltage
          *  or both.
          */
-        OperatingMode operatingMode = OperatingMode::SHUNT_BUS_VOLTAGE_SS;
+        OperatingMode operatingMode = OperatingMode::POWER_DOWN;
 
         /// Shunt voltage threshold for critical and warning alert for channel1 [μV]
         VoltageThreshold threshold1;
@@ -242,16 +242,24 @@ namespace INA3221 {
          */
         etl::pair<ChannelMeasurement, ChannelMeasurement> getMeasurement();
 
+        /**
+         * Get channel shunt voltage
+         * @param channel channel identification number, from 1 to 3
+         * @return the bus voltage of the channel
+         */
         etl::expected<float, Error> getShuntVoltage(uint8_t channel);
 
         /**
-         * Return bash Voltage of channel in mV
-         * @param 
+         * Get channel bus voltage
+         * @param channel channel identification number, from 1 to 3
+         * @return the bus voltage of the channel
          */
         etl::expected<float, Error> getBusVoltage(uint8_t channel);
 
         /**
-         * Return shunt Voltage of channel in mV
+         * Get the current of the channel
+         * @param channel channel identification number, from 1 to 3
+         * @return the bus voltage of the channel
          */
         etl::expected<float, Error> getCurrent(uint8_t channel);
 

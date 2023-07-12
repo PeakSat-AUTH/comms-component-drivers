@@ -114,8 +114,9 @@ namespace INA3221 {
 //        uint16_t mode = (config.enableChannel1 << 14) | (config.enableChannel2 << 13) | (config.enableChannel3 << 12) |
 //                        ((uint16_t) config.averagingMode << 10) | ((uint16_t) config.busVoltageTime << 6) |
 //                        ((uint16_t) config.shuntVoltageTime << 3) | ((uint16_t) config.operatingMode);
-        uint16_t mode = 0xF000;
-//        uint16_t mode = 0x7123;
+
+        // hard coded to the default configuration for now, until we know what we want
+        uint16_t mode = 0x7127;
 
         auto err = i2cWrite(Register::CONFG, mode);
         if (!err.has_value()) { return err; }
