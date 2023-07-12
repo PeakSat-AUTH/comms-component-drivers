@@ -245,21 +245,21 @@ namespace INA3221 {
         /**
          * Get channel shunt voltage
          * @param channel channel identification number, from 1 to 3
-         * @return the bus voltage of the channel
+         * @return the bus voltage of the channel in mV
          */
         etl::expected<float, Error> getShuntVoltage(uint8_t channel);
 
         /**
          * Get channel bus voltage
          * @param channel channel identification number, from 1 to 3
-         * @return the bus voltage of the channel
+         * @return the bus voltage of the channel in mV
          */
         etl::expected<float, Error> getBusVoltage(uint8_t channel);
 
         /**
          * Get the current of the channel
          * @param channel channel identification number, from 1 to 3
-         * @return the bus voltage of the channel
+         * @return the current of the channel in mA
          */
         etl::expected<float, Error> getCurrent(uint8_t channel);
 
