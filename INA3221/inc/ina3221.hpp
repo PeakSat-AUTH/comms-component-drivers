@@ -264,6 +264,13 @@ namespace INA3221 {
         etl::expected<float, Error> getCurrent(uint8_t channel);
 
         /**
+         * Get the power consumed by the channel
+         * @param channel channel identification number, from 1 to 3
+         * @return the power of the channel in mW
+         */
+        etl::expected<float, Error> getPower(uint8_t channel);
+
+        /**
          * Return the value of Die ID register. Testing only.
          */
         etl::expected<uint16_t, Error> getDieID();
