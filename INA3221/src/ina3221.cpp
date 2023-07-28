@@ -17,7 +17,7 @@ namespace INA3221 {
                             static_cast<uint8_t>(value >> 8),
                             static_cast<uint8_t>(value & 0x00FF)};
 
-        if (HAL_I2C_Master_Transmit(&hi2c, i2cSlaveAddress << 1, buffer, 3, 1000) != HAL_OK) {
+        if (HAL_I2C_Master_Transmit(&hi2c, I2CSlaveAddress << 1, buffer, 3, 1000) != HAL_OK) {
             return etl::unexpected(Error::I2C_FAILURE);
         }
 
@@ -28,11 +28,11 @@ namespace INA3221 {
         uint8_t buffer[2];
         auto regAddress = static_cast<uint8_t>(address);
 
-        if (HAL_I2C_Master_Transmit(&hi2c, i2cSlaveAddress << 1, &regAddress, 1, 1000) != HAL_OK) {
+        if (HAL_I2C_Master_Transmit(&hi2c, I2CSlaveAddress << 1, &regAddress, 1, 1000) != HAL_OK) {
             return etl::unexpected(Error::I2C_FAILURE);
         }
 
-        if (HAL_I2C_Master_Receive(&hi2c, i2cSlaveAddress << 1, buffer, 2, 1000) != HAL_OK) {
+        if (HAL_I2C_Master_Receive(&hi2c, I2CSlaveAddress << 1, buffer, 2, 1000) != HAL_OK) {
             return etl::unexpected(Error::I2C_FAILURE);
         }
 
@@ -62,9 +62,9 @@ namespace INA3221 {
 
     etl::pair<ChannelMeasurement, ChannelMeasurement> INA3221::getMeasurement() {
         ChannelMeasurement busMeasurement = etl::exchange(busVoltage,
-                                                          std::make_tuple(std::nullopt, std::nullopt, std::nullopt));
+                                                          std::make_tuple(etl::nullopt, etl::nullopt, etl::nullopt));
         ChannelMeasurement shuntMeasurement = etl::exchange(shuntVoltage,
-                                                            std::make_tuple(std::nullopt, std::nullopt, std::nullopt));
+                                                            std::make_tuple(etl::nullopt, etl::nullopt, etl::nullopt));
         return etl::make_pair(busMeasurement, shuntMeasurement);
     }
 
@@ -98,7 +98,7 @@ namespace INA3221 {
         auto mVolts = getShuntVoltage(channel); 
         if (!mVolts.has_value()) { return mVolts; }
 
-        float mAmpere = mVolts.value()/shuntResistor;  
+        float mAmpere = mVolts.value()/ShuntResistor;  
         return mAmpere; 
     }
 
@@ -109,7 +109,7 @@ namespace INA3221 {
         auto mVolts = getBusVoltage(channel);
         if (!mVolts.has_value()) { return mVolts; }
 
-        float power = 0.001 * mVolts.value() * mAmpere.value() ;
+        float power = 0.001 * mVolts.value() * mAmpere.value();
         return power;
     }
 
@@ -122,12 +122,12 @@ namespace INA3221 {
     }
 
     etl::expected<void, Error> INA3221::setup() {
-//        uint16_t mode = (config.enableChannel1 << 14) | (config.enableChannel2 << 13) | (config.enableChannel3 << 12) |
-//                        ((uint16_t) config.averagingMode << 10) | ((uint16_t) config.busVoltageTime << 6) |
-//                        ((uint16_t) config.shuntVoltageTime << 3) | ((uint16_t) config.operatingMode);
+       uint16_t mode = (config.enableChannel1 << 14) | (config.enableChannel2 << 13) | (config.enableChannel3 << 12) |
+                       ((uint16_t) config.averagingMode << 9) | ((uint16_t) config.busVoltageTime << 6) |
+                       ((uint16_t) config.shuntVoltageTime << 3) | ((uint16_t) config.operatingMode);
 
         // hard coded to the default configuration for now, until we know what we want
-        uint16_t mode = 0x7127;
+        // uint16_t mode = 0x7127;
 
         auto err = i2cWrite(Register::CONFG, mode);
         if (!err.has_value()) { return err; }

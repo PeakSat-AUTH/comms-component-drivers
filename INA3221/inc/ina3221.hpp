@@ -3,17 +3,17 @@
 
 #include <cstdint>
 #include <valarray>
-#include <optional>
 #include <type_traits>
 #include <tuple>
 #include "etl/utility.h"
 #include "etl/expected.h"
+#include "etl/optional.h"
 #include "main.h"
 
 namespace INA3221 {
     typedef etl::pair<uint32_t, uint32_t> VoltageThreshold;
 
-    typedef std::tuple<std::optional<uint32_t>, std::optional<uint32_t>, std::optional<uint32_t>> ChannelMeasurement;
+    typedef std::tuple<etl::optional<uint32_t>, etl::optional<uint32_t>, etl::optional<uint32_t>> ChannelMeasurement;
 
     /// Device I2C addresses
     enum class I2CAddress {
@@ -167,7 +167,7 @@ namespace INA3221 {
         bool enableChannel3 = true;
 
         /// The number of voltage samples that are averaged together
-        AveragingMode averagingMode = AveragingMode::AVG_4;
+        AveragingMode averagingMode = AveragingMode::AVG_1;
 
         /**
           * Time of bus voltage measurement conversion.
@@ -195,7 +195,7 @@ namespace INA3221 {
          *  This register also controls whether this is applies only to shunt voltage, bus voltage
          *  or both.
          */
-        OperatingMode operatingMode = OperatingMode::POWER_DOWN;
+        OperatingMode operatingMode = OperatingMode::SHUNT_BUS_VOLTAGE_CONT;
 
         /// Shunt voltage threshold for critical and warning alert for channel1 [μV]
         VoltageThreshold threshold1;
@@ -305,12 +305,12 @@ namespace INA3221 {
         /**
          * I2C Bus Slave Address
          */
-        static constexpr uint16_t i2cSlaveAddress = static_cast<uint16_t>(I2CAddress::Address1);
+        static constexpr uint16_t I2CSlaveAddress = static_cast<uint16_t>(I2CAddress::Address1);
 
         /**
          * Value of the shunt resistors in Ohms
          */
-        static constexpr float shuntResistor = 0.1;
+        static constexpr float ShuntResistor = 0.1;
 
         static void wait(uint32_t msec);
 
@@ -343,9 +343,9 @@ namespace INA3221 {
         etl::expected<void, Error> writeRegisterField(Register address, uint16_t value, uint16_t mask, uint16_t shift);
 
         /// Bus voltage across the three measured channels (NULL values indicate that the channel isn't currently monitored)
-        ChannelMeasurement busVoltage{NULL, NULL, NULL};
+        ChannelMeasurement busVoltage{etl::nullopt, etl::nullopt, etl::nullopt};
         /// Shunt voltage across the three measured channels (NULL values indicate that the channel isn't currently monitored)
-        ChannelMeasurement shuntVoltage{NULL, NULL, NULL};
+        ChannelMeasurement shuntVoltage{etl::nullopt, etl::nullopt, etl::nullopt};
 
         void handleIrq(void);
 
