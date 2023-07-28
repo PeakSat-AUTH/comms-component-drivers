@@ -49,7 +49,7 @@ namespace INA3221 {
     INA3221::writeRegisterField(Register address, uint16_t value, uint16_t mask, uint16_t shift) {
         auto reg = i2cRead(address);
         if (!reg.has_value()) {
-            return { etl::unexpected(reg.error()) };
+            return etl::unexpected(reg.error());
         }
 
         uint16_t val = (reg.value() & ~mask) | (value << shift);
