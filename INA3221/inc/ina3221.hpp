@@ -285,8 +285,8 @@ namespace INA3221 {
          */
         etl::expected<uint16_t, Error> getConfigRegister();
 
-        INA3221(I2C_HandleTypeDef &hi2c, const INA3221Config &&config, Error &err) :
-                hi2c(hi2c), config(std::move(config)) {
+        INA3221(I2C_HandleTypeDef &hi2c, const INA3221Config &config, Error &err) :
+                hi2c(hi2c), config(config) {
             auto tmp = setup();
             if (!tmp.has_value()) {
                 err = tmp.error();
