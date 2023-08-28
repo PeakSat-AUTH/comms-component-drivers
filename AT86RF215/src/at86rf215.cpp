@@ -1871,7 +1871,7 @@ void AT86RF215::handle_irq(void) {
     }
     if ((irq & InterruptMask::TransceiverReady) != 0) {
         if (rx_ongoing){
-            // Switch to TX state once the transceiver is ready to send
+            // Switch to RX state once the transceiver is ready to receive
             set_state(Transceiver::RF24, State::RF_RX, err);
             if (cca_ongoing) {
                 spi_write_8(RF24_EDC, 0x1, err);
