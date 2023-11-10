@@ -64,18 +64,18 @@ struct AT86RF215Configuration {
 
 	// TX Front-end
 	PowerAmplifierRampTime powerAmplifierRampTime09 =
-			PowerAmplifierRampTime::RF_PARAMP4U;
+			PowerAmplifierRampTime::RF_PARAMP32U;
 	PowerAmplifierRampTime powerAmplifierRampTime24 =
 			PowerAmplifierRampTime::RF_PARAMP4U;
 	TransmitterCutOffFrequency transmitterCutOffFrequency09 =
-			TransmitterCutOffFrequency::RF_FLC500KHZ;
+			TransmitterCutOffFrequency::RF_FLC80KHZ;
 	TransmitterCutOffFrequency transmitterCutOffFrequency24 =
 			TransmitterCutOffFrequency::RF_FLC500KHZ;
 	TxRelativeCutoffFrequency txRelativeCutoffFrequency09 =
 			TxRelativeCutoffFrequency::FCUT_025;
 	TxRelativeCutoffFrequency txRelativeCutoffFrequency24 =
 			TxRelativeCutoffFrequency::FCUT_025;
-	bool directModulation09 = false;
+	bool directModulation09 = true;
 	bool directModulation24 = false;
 	TransmitterSampleRate transceiverSampleRate09 =
 			TransmitterSampleRate::FS_4000;
@@ -85,7 +85,7 @@ struct AT86RF215Configuration {
 			PowerAmplifierCurrentControl::PA_NO;
 	PowerAmplifierCurrentControl powerAmplifierCurrentControl24 =
 			PowerAmplifierCurrentControl::PA_NO;
-	uint8_t txOutPower09 = 0x1F;
+	uint8_t txOutPower09 = 0x1F; // 31 // maximum power at around 15dBm
 	uint8_t txOutPower24 = 0x1F;
 	ExternalLNABypass externalLNABypass09 = ExternalLNABypass::FALSE;
 	ExternalLNABypass externalLNABypass24 = ExternalLNABypass::FALSE;
@@ -140,7 +140,6 @@ struct AT86RF215Configuration {
 	SkewAlignment skewAlignment = SkewAlignment::SKEW3906NS;
 
 	// Baseband Core
-
 	bool continuousTransmit09 = false;
 	bool continuousTransmit24 = false;
 	bool frameCheckSequenceFilter09 = false;

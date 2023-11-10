@@ -52,7 +52,7 @@ enum RegisterBitmasks {
 };
 
 enum class PLLChannelMode {
-    IEECompliant = 0x0,	///< f = (CCF0 + CN*CS)*25kHz + 1.5GHz*(transceiver == RF24)
+    IEECompliant = 0x0,	/// < f = (CCF0 + CN*CS)*25kHz + 1.5GHz*(transceiver == RF24)
     FineResolution450 = 0x1,	///< 389.5-510 MHz -- 99.182Hz stepping
     FineResolution900 = 0x2,	///< 779-1020 MHz -- 193.364Hz stepping
     FineResolution2443 = 0x3,	///< 2400-2483.5 MHz -- 396.782Hz stepping
