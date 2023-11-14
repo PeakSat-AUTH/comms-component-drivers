@@ -50,11 +50,14 @@ struct AT86RF215Configuration {
 	uint8_t energyDetectFactor24 = 0x10;
 
 	// PLL
-	uint16_t pllFrequency09 = 0x8D20;
+    // 00100101 | 01000010 = CCF0H | CCF0L
+	uint16_t pllFrequency09 = 9538;
 	uint16_t pllFrequency24 = 0x0CF8;
-	uint16_t pllChannelNumber09 = 0x0003;
+	uint16_t pllChannelNumber09 = 0xFC; // 11111100
+    // if you combine | 00100101 | 01000010 | 11111100 = | CCF0H | CCF0L | CNL |
+    // you get N = 241980 which gives f = 401000091.6Hz for FineResolution450
 	uint16_t pllChannelNumber24 = 0x0000;
-	PLLChannelMode pllChannelMode09 = PLLChannelMode::IEECompliant;
+	PLLChannelMode pllChannelMode09 = PLLChannelMode::FineResolution450;
 	PLLChannelMode pllChannelMode24 = PLLChannelMode::IEECompliant;
 	PLLBandwidth pllBandwidth09 = PLLBandwidth::BWDefault;
 	PLLBandwidth pllBandwidth24 = PLLBandwidth::BWDefault;

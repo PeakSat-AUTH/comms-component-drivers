@@ -308,7 +308,7 @@ void At86rf215::configure_pll(Transceiver transceiver, uint16_t freq,
 		err = Error::INVALID_TRANSCEIVER_FREQ;
 		return;
 	}
-
+    // set the RF09_CCF0H and RF09_CCF0L regs
 	set_pll_channel_frequency(transceiver, freq, err);
 	if (err != Error::NO_ERRORS) {
 		return;
@@ -1771,7 +1771,7 @@ void At86rf215::setup(Error &err) {
 				config.physicalLayerType24, err);
 		if (err != Error::NO_ERRORS) {
 				return;
-			}
+        }
     setup_physical_layer_for_fsk(Transceiver::RF09, err);
 
 
@@ -1798,11 +1798,7 @@ void At86rf215::setup(Error &err) {
 	if (err != Error::NO_ERRORS) {
 		return;
 	}
-
-    // Set up TX Digital Front End - Enable Direct Modulation
-
-
-
+    
 	// Set up RX front-end
 	setup_rx_frontend(Transceiver::RF09, config.ifInversion09, config.ifShift09,
 			config.rxBandwidth09, config.rxRelativeCutoffFrequency09,

@@ -277,9 +277,9 @@ enum class AnalogVoltageEnable {
 };
 
 enum class PowerAmplifierVoltageControl {
-    PAVC_2V0 = 0x0,	///< 2.0 V
-    PAVC_2V2 = 0x1,	///< 2.2 V
-    PAVC_2V4 = 0x2,	///< 2.4 V
+    PAVC_2V0 = 0x0,	/// < 2.0 V
+    PAVC_2V2 = 0x1,	/// < 2.2 V
+    PAVC_2V4 = 0x2,	/// < 2.4 V
     PAVC_INVALID = 0x3,
 };
 
