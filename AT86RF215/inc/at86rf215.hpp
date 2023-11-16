@@ -141,7 +141,7 @@ public:
 	 * Sets the central channel frequency of the PLL
 	 *
 	 * @param transceiver	Specifier the transceiver used
-	 * @param freq 			[CCF0L, CCF0H] bytes that control the central frequency
+	 * @param freq 			Central frequency of the PLL in kHz
 	 * @param err			Pointer to raised error
 	 */
 	void set_pll_channel_frequency(Transceiver transceiver, uint16_t freq,

@@ -385,19 +385,19 @@ uint8_t At86rf215::get_pll_frequency(Transceiver transceiver, Error &err) {
 	RegisterAddress regpll;
 
 	if (transceiver == RF09) {
-		regpll = RF09_PLLCF;
+		regpll = RF09_CCF0L; //
 	} else if (transceiver == RF24) {
 		regpll = RF24_PLLCF;
 	}
-
-	uint8_t freq = spi_read_8(regpll, err) & 0x3F;
+    uint8_t freq = spi_read_8(regpll, err);
+	//uint8_t freq = spi_read_8(regpll, err) & 0x3F;
 	if (err != Error::NO_ERRORS) {
 		return 0;
 	}
 	return freq;
 }
 
-void At86rf215::set_tcxo_trimming(CrystalTrim trim, Error &err) {
+void At86rf215::set_tcxo_trimming(CrystalTrim trim, Error &err){
 	uint8_t trgxcov = spi_read_8(RF_XOC, err) & 0x1F;
 	if (err != Error::NO_ERRORS)
 		return;
