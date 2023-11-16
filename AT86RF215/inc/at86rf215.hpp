@@ -31,7 +31,7 @@ inline uint8_t operator &(uint8_t a, InterruptMask b)
     return a & static_cast<uint8_t>(b);
 }
 
-class AT86RF215 {
+class At86rf215 {
 public:
 	/*
 	 * Initializer for AT86RF215
@@ -39,7 +39,7 @@ public:
 	 * @param hspi: pointer to the SPI_HandleTypeDef responsible for configuring the SPI.
 	 *
 	 */
-	AT86RF215(SPI_HandleTypeDef *hspim, const AT86RF215Configuration&& config) :
+    At86rf215(SPI_HandleTypeDef *hspim, const AT86RF215Configuration&& config) :
 			hspi(hspim), config(std::move(config)), tx_ongoing(false), rx_ongoing(false),
 			agc_held(false) {
 	};

@@ -64,11 +64,11 @@ struct AT86RF215Configuration {
 
 	// TX Front-end
 	PowerAmplifierRampTime powerAmplifierRampTime09 =
-			PowerAmplifierRampTime::RF_PARAMP4U;
+			PowerAmplifierRampTime::RF_PARAMP32U;
 	PowerAmplifierRampTime powerAmplifierRampTime24 =
 			PowerAmplifierRampTime::RF_PARAMP4U;
 	TransmitterCutOffFrequency transmitterCutOffFrequency09 =
-			TransmitterCutOffFrequency::RF_FLC500KHZ;
+			TransmitterCutOffFrequency::RF_FLC80KHZ;
 	TransmitterCutOffFrequency transmitterCutOffFrequency24 =
 			TransmitterCutOffFrequency::RF_FLC500KHZ;
 	TxRelativeCutoffFrequency txRelativeCutoffFrequency09 =
