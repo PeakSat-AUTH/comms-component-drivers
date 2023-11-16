@@ -1,3 +1,5 @@
+#pragma once
+
 #include <at86rf215definitions.hpp>
 #include "stm32h7xx_hal.h"
 #include "at86rf215config.hpp"
@@ -29,15 +31,15 @@ inline uint8_t operator &(uint8_t a, InterruptMask b)
     return a & static_cast<uint8_t>(b);
 }
 
-class At86rf215{
+class AT86RF215 {
 public:
 	/*
-	 * Initializer for At86rf215
+	 * Initializer for AT86RF215
 	 *
 	 * @param hspi: pointer to the SPI_HandleTypeDef responsible for configuring the SPI.
 	 *
 	 */
-	At86rf215(SPI_HandleTypeDef *hspim, const AT86RF215Configuration&& config) :
+	AT86RF215(SPI_HandleTypeDef *hspim, const AT86RF215Configuration&& config) :
 			hspi(hspim), config(std::move(config)), tx_ongoing(false), rx_ongoing(false),
 			agc_held(false) {
 	};
@@ -141,7 +143,7 @@ public:
 	 * Sets the central channel frequency of the PLL
 	 *
 	 * @param transceiver	Specifier the transceiver used
-	 * @param freq 			Central frequency of the PLL in kHz
+	 * @param freq 			Central frequency of the PLL
 	 * @param err			Pointer to raised error
 	 */
 	void set_pll_channel_frequency(Transceiver transceiver, uint16_t freq,
@@ -214,7 +216,7 @@ public:
 	 *
 	 * @param err	Pointer to raised error
 	 * @returns 	The part number that is one of the following:
-	 * 					- At86rf215
+	 * 					- AT86RF215
 	 * 					- AT86RF215IQ
 	 * 					- AT86RF215M
 	 */
@@ -316,7 +318,7 @@ public:
 
 	/*
 	 * Set the low pass cut-off frequency of the filter in the TX chain.
-	 * For the filter response refer to Figure 6-2, Atmel At86rf215 datasheet
+	 * For the filter response refer to Figure 6-2, Atmel AT86RF215 datasheet
 	 *
 	 * @param transceiver		Specifies the transceiver used
 	 * @oaram cutoff_freq		LP filter cut-off frequency
@@ -327,7 +329,7 @@ public:
 
 	/*
 	 * Get the low pass cut-off frequency of the filter in the TX chain.
-	 * For the filter response refer to Figure 6-2, Atmel At86rf215 datasheet
+	 * For the filter response refer to Figure 6-2, Atmel AT86RF215 datasheet
 	 *
 	 * @param transceiver		Specifies the transceiver used
 	 * @param err				Pointer to raised error
@@ -379,7 +381,7 @@ public:
 	/*
 	 * Set the sample rate of the receiver.
 	 * The sample rate can be configured in the range 400-4000 kHz. For exact configuration
-	 * refer to At86rf215 datasheet, Table 6-6 or in registers.h
+	 * refer to AT86RF215 datasheet, Table 6-6 or in registers.h
 	 *
 	 * @param transceiver		Specifies the transceiver used
 	 * @oaram sample_rate		Sample rate of receiver
@@ -390,7 +392,7 @@ public:
 
 	/*
 	 * Set the sample rate of the receiver.
-	 * For exact configuration of the sample_rate refer to At86rf215 datasheet, Table 6-6
+	 * For exact configuration of the sample_rate refer to AT86RF215 datasheet, Table 6-6
 	 * or in registers.h*
 	 *
 	 * @param transceiver		Specifies the transceiver used
@@ -935,7 +937,7 @@ public:
 	 * @param transceiver		Specifies the transceiver used
 	 * @param tx_out_power		Output power of the transmitter (0x00-0x1F in 1dB steps)
 	 * @param ext_lna_bypass 	Specifies whether external LNA will be bypassed
-	 * @param agc_map			Controls gain of the gain controller for the external LNA
+	 * @param agc_map			Controls gain of the gain controler for the external LNA
 	 * @param av_ext			Disables internal supply voltage
 	 * @param av_enable			Defines whether voltage regulator is enabled during TRXOFF
 	 * @param pa_vcontrol		Controls supply voltage of internal PA
@@ -955,8 +957,8 @@ public:
 	 * Sets up the target registers for setting up the transceiver rx frontend
 	 *
 	 * @param transceiver		Specifies the transceiver used
-	 * @param if_inversion		Defines whether IF inverted signal is used in the receiver side
-	 * @param if_shift			If true, it shifts the IF frequency by a factor of 1.25
+	 * @param if_inversion		Defines whether IF inverted signal is used in the receive side
+	 * @param if_sheft			If true, it shifts the IF frequency by a factor of 1.25
 	 * @param rx_bw				Specifies the receiver bandwidth
 	 * @param rx_rel_cutoff		RX filter relative cut-off frequency
 	 * @param rx_sample_rate	RX sample rate
@@ -1047,16 +1049,6 @@ public:
 	 */
 	void setup_phy_baseband(Transceiver transceiver, bool continuousTransmit, bool frameSeqFilter, bool transmitterAutoFCS,
 			FrameCheckSequenceType fcsType, bool basebandEnable, PhysicalLayerType  phyType, Error &err);
-
-    /**
-     * Sets the Modulation order to 2-FSK or 4-FSK
-     *
-     * @param transceiver      Specifies the transceiver used
-     * @param err              Pointer to returned error
-     */
-    void setup_physical_layer_for_fsk(Transceiver transceiver, Error &err);
-
-
 
     void setup_irq_mask(Transceiver transceiver, bool iqIfSynchronizationFailure, bool transceiverError,
         bool batteryLow, bool energyDetectionCompletion, bool transceiverReady, bool wakeup,
