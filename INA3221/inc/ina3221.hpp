@@ -1,19 +1,16 @@
-#ifndef COMPONENT_DRIVERS_INA3221_HPP
-#define COMPONENT_DRIVERS_INA3221_HPP
+#pragma once
 
 #include <cstdint>
-#include <valarray>
-#include <type_traits>
-#include <tuple>
 #include "etl/utility.h"
 #include "etl/expected.h"
-#include "etl/optional.h"
 #include "main.h"
+// #include <tuple>
+// #include "etl/optional.h"
 
 namespace INA3221 {
     typedef etl::pair<uint32_t, uint32_t> VoltageThreshold;
 
-    typedef std::tuple<etl::optional<uint32_t>, etl::optional<uint32_t>, etl::optional<uint32_t>> ChannelMeasurement;
+    // typedef std::tuple<etl::optional<uint32_t>, etl::optional<uint32_t>, etl::optional<uint32_t>> ChannelMeasurement;
 
     /// Device I2C addresses
     enum class I2CAddress {
@@ -119,7 +116,7 @@ namespace INA3221 {
     };
 
     /**
-     * Operating mode of INNA3211. The main three modes are:
+     * Operating mode of INA3211. The main three modes are:
      *  - Power down: Turns off the current drawn to reduce power consumption. Switching from power-down
      *  mode takes approximately 40 μs. I2C communication is still enabled while in this mode
      *  - Single shot: Measurements are taken only whenever this register is written and set to single shot mode
@@ -240,7 +237,7 @@ namespace INA3221 {
          * another measurement. The bus and channel voltage are reset to avoid reading duplicates.
          * TODO: Also attach timestamps?
          */
-        etl::pair<ChannelMeasurement, ChannelMeasurement> getMeasurement();
+        // etl::pair<ChannelMeasurement, ChannelMeasurement> getMeasurement();
 
         /**
          * Get channel shunt voltage
@@ -312,6 +309,11 @@ namespace INA3221 {
          */
         static constexpr float ShuntResistor = 0.1;
 
+        /**
+         * Scaling constant for Shunt Voltage
+         */
+        static constexpr float ShuntVoltScale = 0.005; 
+
         static void wait(uint32_t msec);
 
         /**
@@ -343,16 +345,12 @@ namespace INA3221 {
         etl::expected<void, Error> writeRegisterField(Register address, uint16_t value, uint16_t mask, uint16_t shift);
 
         /// Bus voltage across the three measured channels (NULL values indicate that the channel isn't currently monitored)
-        ChannelMeasurement busVoltage{etl::nullopt, etl::nullopt, etl::nullopt};
+        // ChannelMeasurement busVoltage{etl::nullopt, etl::nullopt, etl::nullopt};
         /// Shunt voltage across the three measured channels (NULL values indicate that the channel isn't currently monitored)
-        ChannelMeasurement shuntVoltage{etl::nullopt, etl::nullopt, etl::nullopt};
+        // ChannelMeasurement shuntVoltage{etl::nullopt, etl::nullopt, etl::nullopt};
 
         void handleIrq(void);
 
         INA3221Config config;
     };
 }
-
-
-#endif //COMPONENT_DRIVERS_INA3221_HPP
-
