@@ -1,31 +1,41 @@
 #pragma once
 
 #include <cstdint>
+#include <tuple>
+#include <type_traits>
 #include "etl/utility.h"
 #include "etl/expected.h"
-#include <tuple>
 #include "etl/optional.h"
 #include "main.h"
 
 namespace INA3221 {
+    /**
+     * Converts an enumeration member to its underlying type.
+     * Equivalent to std::to_underlying (which is not available atm)
+     */
+    template <typename T>
+    constexpr auto to_underlying(T value) {
+        return static_cast<std::underlying_type_t<T>>(value);
+    }
+
     typedef etl::pair<uint32_t, uint32_t> VoltageThreshold;
 
-     typedef std::tuple<etl::optional<uint32_t>, etl::optional<uint32_t>, etl::optional<uint32_t>> ChannelMeasurement;
+    typedef std::tuple<etl::optional<uint32_t>, etl::optional<uint32_t>, etl::optional<uint32_t>> ChannelMeasurement;
 
     /// Device I2C addresses
-    enum class I2CAddress {
+    enum class I2CAddress : uint16_t {
         /// Connected to GND
-        Address1 = 0x40,
+        ADDRESS1 = 0x40,
         /// Connected to VS
-        Address2 = 0x41,
+        ADDRESS2 = 0x41,
         /// Connected to SDA
-        Address3 = 0x42,
+        ADDRESS3 = 0x42,
         /// Connected to SCL
-        Address4 = 0x43
+        ADDRESS4 = 0x43
     };
 
     /// Register address
-    enum class Register {
+    enum class Register : uint8_t {
         /// Configuration
         CONFG = 0x00,
         /// Channel 1 Shunt Voltage
@@ -69,7 +79,7 @@ namespace INA3221 {
     };
 
     /// Alert level
-    enum class Alert {
+    enum class Alert : uint8_t {
         CRITICAL = 0,
         WARNING,
         POWER_VALID,
@@ -77,14 +87,14 @@ namespace INA3221 {
     };
 
     /// Error status
-    enum class Error {
+    enum class Error : uint8_t {
         NO_ERRORS = 0,
         I2C_FAILURE,
         INVALID_STATE,
     };
 
     /// The number of voltage samples that are averaged together
-    enum class AveragingMode {
+    enum class AveragingMode : uint16_t {
         AVG_1 = 0,
         AVG_4 = 1,
         AVG_16 = 2,
@@ -96,7 +106,7 @@ namespace INA3221 {
     };
 
     /// Bus voltage conversion time
-    enum class VoltageTime {
+    enum class VoltageTime : uint16_t {
         /// 140 μs
         V_140_MS = 0,
         /// 240 μs
@@ -127,7 +137,7 @@ namespace INA3221 {
      *  This register also controls whether this is applies only to shunt voltage, bus voltage
      *  or both.
      */
-    enum class OperatingMode {
+    enum class OperatingMode : uint16_t {
         POWER_DOWN = 0,               /// Power-down
         SHUNT_VOLTAGE_SS = 1,         /// Shunt Voltage, Single-Shot
         BUS_VOLTAGE_SS = 2,           /// Bus Voltage, Single-Shot
@@ -282,15 +292,13 @@ namespace INA3221 {
          */
         etl::expected<uint16_t, Error> getConfigRegister();
 
-        INA3221(I2C_HandleTypeDef &hi2c, const INA3221Config &config, Error &err) :
-                hi2c(hi2c), config(config) {
-            auto tmp = setup();
-            if (!tmp.has_value()) {
-                err = tmp.error();
+        INA3221(I2C_HandleTypeDef &hi2c, INA3221Config config, Error &error) :
+                hi2c(hi2c), config(std::move(config)) {
+            auto temporary = setup();
+            if (not temporary.has_value()) {
+                error = temporary.error();
             }
         };
-
-        ~INA3221() {};
 
     private:
 
@@ -302,7 +310,7 @@ namespace INA3221 {
         /**
          * I2C Bus Slave Address
          */
-        static constexpr uint16_t I2CSlaveAddress = static_cast<uint16_t>(I2CAddress::Address1);
+        static constexpr I2CAddress I2CSlaveAddress = I2CAddress::ADDRESS1;
 
         /**
          * Value of the shunt resistors in Ohms
@@ -312,9 +320,12 @@ namespace INA3221 {
         /**
          * Scaling constant for Shunt Voltage
          */
-        static constexpr float ShuntVoltScale = 0.005; 
+        static constexpr float ShuntVoltScale = 0.005;
 
-        static void wait(uint32_t msec);
+        /**
+         * Maximum delay until timeout in I2C read/write operation
+         */
+        static constexpr uint16_t MaxTimeoutDelay = 100;
 
         /**
          * Writes two bytes in the given register via I2C
@@ -331,25 +342,24 @@ namespace INA3221 {
          * @param address       Register address
          * @return              read value and error status
          */
-
         etl::expected<uint16_t, Error> i2cRead(Register address);
 
         /**
          * Writes to a specific field of the register
-         * @param address       Register address
+         * @param registerAddress       Register registerAddress
          * @param value         Value to write to
          * @param mask          Mask of the value
          * @param shift         Shift bits - determines the register field to write to
          * @return              Error status
          */
-        etl::expected<void, Error> writeRegisterField(Register address, uint16_t value, uint16_t mask, uint16_t shift);
+        etl::expected<void, Error> writeRegisterField(Register registerAddress, uint16_t value, uint16_t mask, uint16_t shift);
 
         /// Bus voltage across the three measured channels (NULL values indicate that the channel isn't currently monitored)
         ChannelMeasurement busVoltage{etl::nullopt, etl::nullopt, etl::nullopt};
         /// Shunt voltage across the three measured channels (NULL values indicate that the channel isn't currently monitored)
         ChannelMeasurement shuntVoltage{etl::nullopt, etl::nullopt, etl::nullopt};
 
-        void handleIrq(void);
+        void handleIrq();
 
         INA3221Config config;
     };
