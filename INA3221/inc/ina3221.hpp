@@ -183,10 +183,8 @@ namespace INA3221 {
      */
     struct INA3221Config {
 
-        /// Determine whether summation channel value is periodically updated
-        bool summationChannelControl1 = true;
-        bool summationChannelControl2 = true;
-        bool summationChannelControl3 = true;
+        /// Determines which shunt voltage measurement channels are enabled to fill the Shunt-Voltage Sum register
+        etl::array<bool, 3> summationChannelControl{true, true, true};
 
         /// Warning alerts enabled
         bool enableWarnings = true;
@@ -194,14 +192,8 @@ namespace INA3221 {
         /// Critical alerts enabled
         bool enableCritical = true;
 
-        /// Determines whether channel 1 is enabled
-        bool enableChannel1 = true;
-
-        /// Determines whether channel 2 is enabled
-        bool enableChannel2 = true;
-
-        /// Determines whether channel 3 is enabled
-        bool enableChannel3 = true;
+        /// Determines which of the 3 channels are enabled
+        etl::array<bool, 3> enableChannel{true, true, true};
 
         /// The number of voltage samples that are averaged together
         AveragingMode averagingMode = AveragingMode::AVG_1;

@@ -121,7 +121,7 @@ namespace INA3221 {
     }
 
     etl::expected<void, Error> INA3221::setup() {
-        uint16_t mode = (config.enableChannel1 << 14) | (config.enableChannel2 << 13) | (config.enableChannel3 << 12) |
+        uint16_t mode = (config.enableChannel[0] << 14) | (config.enableChannel[1] << 13) | (config.enableChannel[2] << 12) |
                        (to_underlying(config.averagingMode) << 9) | (to_underlying(config.busVoltageTime) << 6) |
                        (to_underlying(config.shuntVoltageTime) << 3) | (to_underlying(config.operatingMode));
 
