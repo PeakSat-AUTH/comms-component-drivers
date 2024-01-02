@@ -53,40 +53,82 @@ namespace INA3221 {
     }
 
     etl::expected<void, Error> INA3221::changeOperatingMode(OperatingMode operatingMode) {
+        config.operatingMode = operatingMode;
         return writeRegisterField(Register::CONFG, to_underlying(operatingMode), 0x7, 0);
     }
 
-    // etl::pair<ChannelMeasurement, ChannelMeasurement> INA3221::getMeasurement() {
-    //     ChannelMeasurement busMeasurement = etl::exchange(busVoltage,
-    //                                                       std::make_tuple(etl::nullopt, etl::nullopt, etl::nullopt));
-    //     ChannelMeasurement shuntMeasurement = etl::exchange(shuntVoltage,
-    //                                                         std::make_tuple(etl::nullopt, etl::nullopt, etl::nullopt));
-    //     return etl::make_pair(busMeasurement, shuntMeasurement);
-    // }
-
-    etl::expected<float, Error> INA3221::getShuntVoltage(uint8_t channel) {
-        uint8_t regAddress = to_underlying(Register::CH1SV) + (channel - 1) * 2;
-
-        auto regValue = i2cRead(static_cast<Register>(regAddress));
-        if (not regValue.has_value()) {
-            return etl::unexpected(regValue.error());
-        }
-
-        auto unscaledVolts = static_cast<int16_t>(regValue.value());
-        const float mVolts = unscaledVolts * ShuntVoltScale;
-        return mVolts;
+    bool INA3221::singleShot() const {
+        return config.operatingMode == OperatingMode::SHUNT_VOLTAGE_SS or
+                config.operatingMode == OperatingMode::BUS_VOLTAGE_SS or
+                config.operatingMode == OperatingMode::SHUNT_BUS_VOLTAGE_SS;
     }
 
-    etl::expected<float, Error> INA3221::getBusVoltage(uint8_t channel) {
-        uint8_t regAddress = to_underlying(Register::CH1BV) + (channel - 1) * 2;
+    bool INA3221::busEnabled() const {
+        return config.operatingMode == OperatingMode::BUS_VOLTAGE_SS or
+                config.operatingMode == OperatingMode::BUS_VOLTAGE_CONT or
+                config.operatingMode == OperatingMode::SHUNT_BUS_VOLTAGE_SS or
+                config.operatingMode == OperatingMode::SHUNT_BUS_VOLTAGE_CONT;
+    }
 
-        auto regValue = i2cRead(static_cast<Register>(regAddress));
-        if (not regValue.has_value()) {
-            return etl::unexpected(regValue.error());
+    bool INA3221::shuntEnabled() const {
+        return config.operatingMode == OperatingMode::SHUNT_VOLTAGE_SS or
+               config.operatingMode == OperatingMode::SHUNT_VOLTAGE_CONT or
+               config.operatingMode == OperatingMode::SHUNT_BUS_VOLTAGE_SS or
+               config.operatingMode == OperatingMode::SHUNT_BUS_VOLTAGE_CONT;
+    }
+
+    etl::expected<ChannelMeasurement, Error> INA3221::getMeasurement() {
+//        if (singleShot()) {
+//            changeOperatingMode(config.operatingMode); // trigger measurement when on single shot mode
+//            vTaskDelay(etl::max(
+//                    pdMS_TO_TICKS(conversionTime[to_underlying(config.shuntVoltageTime)] * 1000) / 1000,
+//                    pdMS_TO_TICKS(conversionTime[to_underlying(config.shuntVoltageTime)] * 1000) / 1000
+//                    ));
+//            uint16_t maskeValue;
+//            do {
+//                auto conversionBit = i2cRead(Register::MASKE);
+//                if (not conversionBit.has_value()) {
+//                    return etl::unexpected(conversionBit.error());
+//                }
+//                maskeValue = conversionBit.value();
+//            } while (maskeValue and to_underlying(MaskEnableMasks::CVRF))
+//        }
+
+        VoltageMeasurement shuntMeasurement{etl::nullopt, etl::nullopt, etl::nullopt};
+        VoltageMeasurement busMeasurement{etl::nullopt, etl::nullopt, etl::nullopt};
+        CurrentMeasurement currentMeasurement{etl::nullopt, etl::nullopt, etl::nullopt};
+        PowerMeasurement powerMeasurement{etl::nullopt, etl::nullopt, etl::nullopt};
+
+        if (shuntEnabled()) {
+            for (uint8_t channel = 0; channel <= 2; channel++) {
+                if (not config.enableChannel[channel]) { continue; }
+
+                auto dummy = getShuntVoltage(channel);
+                if (not dummy.has_value()) {
+                    return etl::unexpected(dummy.error());
+                }
+
+                shuntMeasurement[channel] = dummy.value();
+                currentMeasurement[channel] = shuntMeasurement[channel].value() * ShuntConductance;
+            }
         }
 
-        auto mVolts = static_cast<int16_t>(regValue.value());
-        return static_cast<float>(mVolts);
+        if (busEnabled()) {
+            for (uint8_t channel = 0; channel <= 2; channel++) {
+                if (not config.enableChannel[channel]) { continue; }
+
+                auto dummy = getBusVoltage(channel);
+                if (not dummy.has_value()) {
+                    return etl::unexpected(dummy.error());
+                }
+
+                busMeasurement[channel] = dummy.value();
+                powerMeasurement[channel] = 1e-9 * busMeasurement[channel].value() * currentMeasurement[channel].value();
+            }
+        }
+
+
+        return std::tuple{busMeasurement, shuntMeasurement, currentMeasurement, powerMeasurement};
     }
 
     etl::expected<int32_t, Error> INA3221::getShuntVoltage(uint8_t channel) {
@@ -137,34 +179,34 @@ namespace INA3221 {
 
         auto [criticalThreshold1, warningThreshold1] = config.threshold1;
 
-        error = i2cWrite(Register::CH1CA, voltageConversion(criticalThreshold1, 40, 3));
+        error = i2cWrite(Register::CH1CA, voltageConversion(criticalThreshold1, ShuntVoltBase, 3));
         if (not error.has_value()) { return error; }
 
-        error = i2cWrite(Register::CH1WA, voltageConversion(warningThreshold1, 40, 3));
+        error = i2cWrite(Register::CH1WA, voltageConversion(warningThreshold1, ShuntVoltBase, 3));
 
         auto [criticalThreshold2, warningThreshold2] = config.threshold2;
 
-        error = i2cWrite(Register::CH2CA, voltageConversion(criticalThreshold2, 40, 3));
+        error = i2cWrite(Register::CH2CA, voltageConversion(criticalThreshold2, ShuntVoltBase, 3));
         if (not error.has_value()) { return error; }
 
-        error = i2cWrite(Register::CH2WA, voltageConversion(warningThreshold2, 40, 3));
+        error = i2cWrite(Register::CH2WA, voltageConversion(warningThreshold2, ShuntVoltBase, 3));
         if (not error.has_value()) { return error; }
 
         auto [criticalThreshold3, warningThreshold3] = config.threshold3;
 
-        error = i2cWrite(Register::CH3CA, voltageConversion(criticalThreshold3, 40, 3));
+        error = i2cWrite(Register::CH3CA, voltageConversion(criticalThreshold3, ShuntVoltBase, 3));
         if (not error.has_value()) { return error; }
 
-        error = i2cWrite(Register::CH3WA, voltageConversion(warningThreshold3, 40, 3));
+        error = i2cWrite(Register::CH3WA, voltageConversion(warningThreshold3, ShuntVoltBase, 3));
         if (not error.has_value()) { return error; }
 
-        error = i2cWrite(Register::SHVLL, voltageConversion(config.shuntVoltageSumLimit, 40, 1));
+        error = i2cWrite(Register::SHVLL, voltageConversion(config.shuntVoltageSumLimit, ShuntVoltBase, 1));
         if (not error.has_value()) { return error; }
 
-        error = i2cWrite(Register::PWRVU, voltageConversion(config.powerValidUpper, 8000, 1));
+        error = i2cWrite(Register::PWRVU, voltageConversion(config.powerValidUpper, BusVoltBase, 1));
         if (not error.has_value()) { return error; }
 
-        error = i2cWrite(Register::PWRVL, voltageConversion(config.powerValidLower, 8000, 1));
+        error = i2cWrite(Register::PWRVL, voltageConversion(config.powerValidLower, BusVoltBase, 1));
         if (not error.has_value()) { return error; }
 
         error = i2cWrite(Register::MASKE,

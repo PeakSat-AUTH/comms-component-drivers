@@ -287,7 +287,7 @@ namespace INA3221 {
          *
          * @return pair of measurement; first is the bus voltage and second the shunt voltage
          */
-        etl::expected<float, Error> getBusVoltage(uint8_t channel);
+        etl::expected<ChannelMeasurement, Error> getMeasurement();
 
         /**
          * Get channel shunt voltage
@@ -341,14 +341,19 @@ namespace INA3221 {
         static constexpr I2CAddress I2CSlaveAddress = I2CAddress::ADDRESS1;
 
         /**
-         * Value of the shunt resistors in Ohms
+         * Inverse of the shunt resistor value in Mhos, namely shunt conductance
          */
-        static constexpr float ShuntResistor = 0.1;
+        static constexpr uint16_t ShuntConductance = 10;
 
         /**
-         * Scaling constant for Shunt Voltage
+         * Shunt Voltage register base unit in uV
          */
-        static constexpr float ShuntVoltScale = 0.005;
+        static constexpr uint16_t ShuntVoltBase = 40;
+
+        /**
+         * Bus Voltage register base unit in uV
+         */
+        static constexpr uint16_t BusVoltBase = 8000;
 
         /**
          * Maximum delay until timeout in I2C read/write operation
