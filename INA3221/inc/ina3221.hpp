@@ -253,6 +253,11 @@ namespace INA3221 {
         etl::expected<void, Error> setup();
 
         /**
+         * Resets the chip
+         */
+        etl::expected<void, Error> chipReset();
+
+        /**
          * Triggers a measurement of bus or shunt voltage for the active channels. Note that the driver halts until we
          * get a valid reading or an alert is raised.
          *
@@ -263,40 +268,42 @@ namespace INA3221 {
         etl::expected<void, Error> changeOperatingMode(OperatingMode operatingMode);
 
         /**
-         * Get previous measurement. If the driver is set in continuous mode then this value should be automatically
-         * updated periodically. If set to single-shot then `changeOperatingMode` should be called first to trigger
-         * another measurement. The bus and channel voltage are reset to avoid reading duplicates.
-         * TODO: Also attach timestamps?
+         * @return true if the current operating mode has bus measurements enabled, false otherwise
          */
-        // etl::pair<ChannelMeasurement, ChannelMeasurement> getMeasurement();
+        bool busEnabled() const;
 
         /**
-         * Get channel shunt voltage
-         * @param channel channel identification number, from 1 to 3
-         * @return the bus voltage of the channel in mV
+         * @return true if the current operating mode has shunt measurements enabled, false otherwise
          */
-        etl::expected<float, Error> getShuntVoltage(uint8_t channel);
+        bool shuntEnabled() const;
 
         /**
-         * Get channel bus voltage
-         * @param channel channel identification number, from 1 to 3
-         * @return the bus voltage of the channel in mV
+         * @return true if the current operating mode is a single shot mode, false otherwise
+         */
+        bool singleShot() const;
+
+        /**
+         * Get Bus and Shunt voltage measurement in uV, Current measurement in uA, and Power in mW of all channels
+         *
+         * @return pair of measurement; first is the bus voltage and second the shunt voltage
          */
         etl::expected<float, Error> getBusVoltage(uint8_t channel);
 
         /**
-         * Get the current of the channel
-         * @param channel channel identification number, from 1 to 3
-         * @return the current of the channel in mA
+         * Get channel shunt voltage
+         *
+         * @param channel channel identification number, from 0 to 2 corresponding to channels 1 to 3 respectively
+         * @return the bus voltage of the channel in uV
          */
         etl::expected<int32_t, Error> getShuntVoltage(uint8_t channel);
 
         /**
-         * Get the power consumed by the channel
-         * @param channel channel identification number, from 1 to 3
-         * @return the power of the channel in mW
+         * Get channel bus voltage
+         *
+         * @param channel channel identification number, from 0 to 2 corresponding to channels 1 to 3 respectively
+         * @return the bus voltage of the channel in uV
          */
-        etl::expected<float, Error> getPower(uint8_t channel);
+        etl::expected<int32_t, Error> getBusVoltage(uint8_t channel);
 
         /**
          * Return the value of Die ID register. Testing only.

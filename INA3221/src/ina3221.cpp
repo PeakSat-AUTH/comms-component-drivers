@@ -104,9 +104,8 @@ namespace INA3221 {
         return uVolts;
     }
 
-    etl::expected<float, Error> INA3221::getPower(uint8_t channel) {
-        auto mAmpere = getCurrent(channel);
-        if (not mAmpere.has_value()) { return mAmpere; }
+    etl::expected<int32_t, Error> INA3221::getBusVoltage(uint8_t channel) {
+        auto registerAddress = static_cast<Register>(to_underlying(Register::CH1BV) + channel * 2);
 
         auto registerValue = i2cRead(registerAddress);
         if (not registerValue.has_value()) {
@@ -169,11 +168,15 @@ namespace INA3221 {
         if (not error.has_value()) { return error; }
 
         error = i2cWrite(Register::MASKE,
-                       (config.summationChannelControl1 << 14) | (config.summationChannelControl2 << 13)
-                       | (config.summationChannelControl3 << 12) | (config.enableWarnings << 11) |
+                       (config.summationChannelControl[0] << 14) | (config.summationChannelControl[1] << 13)
+                       | (config.summationChannelControl[2] << 12) | (config.enableWarnings << 11) |
                        (config.enableCritical << 10));
 
         return error;
+    }
+
+    etl::expected<void, Error> INA3221::chipReset() {
+        return i2cWrite(Register::CONFG, 0xF000);
     }
 
     void INA3221::handleIrq() {
