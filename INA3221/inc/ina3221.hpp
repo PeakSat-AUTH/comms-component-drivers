@@ -235,14 +235,14 @@ namespace INA3221 {
         /// Shunt voltage threshold for critical and warning alert for channel3 [uV]
         VoltageThreshold threshold3;
 
-        /// Shunt voltage sum limit [μV]
-        uint32_t shuntVoltageSumLimit;
+        /// Shunt voltage sum limit [uV]
+        int32_t shuntVoltageSumLimit;
 
-        /// Upper limit of power-valid [μV]
-        uint32_t powerValidUpper;
+        /// Upper limit of power-valid [uV]
+        int32_t powerValidUpper;
 
-        /// Lower limit of power-valid [μV]
-        uint32_t powerValidLower;
+        /// Lower limit of power-valid [uV]
+        int32_t powerValidLower;
     };
 
     class INA3221 {
@@ -289,7 +289,7 @@ namespace INA3221 {
          * @param channel channel identification number, from 1 to 3
          * @return the current of the channel in mA
          */
-        etl::expected<float, Error> getCurrent(uint8_t channel);
+        etl::expected<int32_t, Error> getShuntVoltage(uint8_t channel);
 
         /**
          * Get the power consumed by the channel

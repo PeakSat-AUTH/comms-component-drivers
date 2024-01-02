@@ -89,27 +89,35 @@ namespace INA3221 {
         return static_cast<float>(mVolts);
     }
 
-    etl::expected<float, Error> INA3221::getCurrent(uint8_t channel) {
-        auto mVolts = getShuntVoltage(channel); 
-        if (not mVolts.has_value()) {
-            return etl::unexpected(mVolts.error()); 
+    etl::expected<int32_t, Error> INA3221::getShuntVoltage(uint8_t channel) {
+        auto registerAddress = static_cast<Register>(to_underlying(Register::CH1SV) + channel * 2);
+
+        auto registerValue = i2cRead(registerAddress);
+        if (not registerValue.has_value()) {
+            return etl::unexpected(registerValue.error());
         }
 
-        const float mAmpere = mVolts.value()/ShuntResistor;
-        return mAmpere; 
+        auto unscaledVolts = static_cast<int16_t>(registerValue.value());
+        unscaledVolts >>= 3;
+        const int32_t uVolts = static_cast<int32_t>(unscaledVolts) * ShuntVoltBase;
+
+        return uVolts;
     }
 
     etl::expected<float, Error> INA3221::getPower(uint8_t channel) {
         auto mAmpere = getCurrent(channel);
         if (not mAmpere.has_value()) { return mAmpere; }
 
-        auto mVolts = getBusVoltage(channel);
-        if (not mVolts.has_value()) {
-            return etl::unexpected(mVolts.error()); 
+        auto registerValue = i2cRead(registerAddress);
+        if (not registerValue.has_value()) {
+            return etl::unexpected(registerValue.error());
         }
 
-        const float power = 0.001 * mVolts.value() * mAmpere.value();
-        return power;
+        auto unscaledVolts = static_cast<int16_t>(registerValue.value());
+        unscaledVolts >>= 1;
+        const int32_t uVolts = static_cast<int32_t>(unscaledVolts) * BusVoltBase;
+
+        return uVolts;
     }
 
     etl::expected<uint16_t, Error> INA3221::getDieID() {
