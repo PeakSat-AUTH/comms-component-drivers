@@ -387,13 +387,6 @@ namespace INA3221 {
          */
         etl::expected<void, Error> writeRegisterField(Register registerAddress, uint16_t value, uint16_t mask, uint16_t shift);
 
-        /// Bus voltage across the three measured channels (NULL values indicate that the channel isn't currently monitored)
-        ChannelMeasurement busVoltage{etl::nullopt, etl::nullopt, etl::nullopt};
-        /// Shunt voltage across the three measured channels (NULL values indicate that the channel isn't currently monitored)
-        ChannelMeasurement shuntVoltage{etl::nullopt, etl::nullopt, etl::nullopt};
-
-        void handleIrq();
-
         INA3221Config config;
     };
 }
