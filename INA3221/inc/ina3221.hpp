@@ -129,6 +129,32 @@ namespace INA3221 {
         V_8_244_MS = 7,
     };
 
+    /// Array to accommodate conversion Times in us
+    etl::array<uint32_t, 8> conversionTimeArray{140, 204, 332, 588, 1100, 2116, 8244};
+
+    enum class MaskEnableMasks : uint16_t {
+        /// conversion ready flag
+        CVRF = 0x0001,
+        /// timing control alert flag
+        TCF = 0x0002,
+        /// power-valid alert flag
+        PVF = 0x0004,
+        /// warning alert flag, channel 1
+        WF1 = 0x0008,
+        /// warning alert flag, channel 2
+        WF2 = 0x0010,
+        /// warning alert flag, channel 3
+        WF3 = 0x0020,
+        /// summation flag
+        SF = 0x0040,
+        /// critical alert flag, channel 1
+        CF1 = 0x0080,
+        /// critical alert flag, channel 2
+        CF2 = 0x0100,
+        /// critical alert flag, channel 3
+        CF3 = 0x0200,
+    };
+
     /**
      * Operating mode of INA3211. The main three modes are:
      *  - Power down: Turns off the current drawn to reduce power consumption. Switching from power-down
