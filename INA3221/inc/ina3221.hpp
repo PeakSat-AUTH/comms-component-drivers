@@ -1,26 +1,30 @@
 #pragma once
 
 #include <cstdint>
-#include <tuple>
 #include <type_traits>
+#include <tuple>
 #include "etl/utility.h"
 #include "etl/expected.h"
 #include "etl/optional.h"
-#include "main.h"
+#include "etl/array.h"
+#include "stm32h7xx_hal.h"
+
+/**
+ * Converts an enumeration member to its underlying type.
+ * Equivalent to std::to_underlying (which is not available atm)
+ */
+template <typename T>
+constexpr auto to_underlying(T value) {
+    return static_cast<std::underlying_type_t<T>>(value);
+}
 
 namespace INA3221 {
-    /**
-     * Converts an enumeration member to its underlying type.
-     * Equivalent to std::to_underlying (which is not available atm)
-     */
-    template <typename T>
-    constexpr auto to_underlying(T value) {
-        return static_cast<std::underlying_type_t<T>>(value);
-    }
+    using VoltageThreshold = etl::pair<int32_t, int32_t>;
 
-    typedef etl::pair<uint32_t, uint32_t> VoltageThreshold;
-
-    typedef std::tuple<etl::optional<uint32_t>, etl::optional<uint32_t>, etl::optional<uint32_t>> ChannelMeasurement;
+    using VoltageMeasurement = etl::array<etl::optional<int32_t>, 3>; /// uV
+    using CurrentMeasurement = etl::array<etl::optional<int32_t>, 3>; /// uA
+    using PowerMeasurement = etl::array<etl::optional<float>, 3>; /// mW
+    using ChannelMeasurement = std::tuple<VoltageMeasurement, VoltageMeasurement, CurrentMeasurement, PowerMeasurement>;
 
     /// Device I2C addresses
     enum class I2CAddress : uint16_t {
@@ -106,29 +110,29 @@ namespace INA3221 {
     };
 
     /// Bus voltage conversion time
-    enum class VoltageTime : uint16_t {
-        /// 140 μs
+    enum class ConversionTime : uint16_t {
+        /// 140 us
         V_140_MS = 0,
-        /// 240 μs
+        /// 204 us
         V_204_MS = 1,
-        /// 322 μs
+        /// 332 us
         V_332_MS = 2,
-        /// 588 μs
+        /// 588 us
         V_588_MS = 3,
-        /// 1.1 μs
+        /// 1.1 ms
         V_1_1_MS = 4,
-        /// 2.116 μs
+        /// 2.116 ms
         V_2_116_MS = 5,
-        /// 4.156 μs
+        /// 4.156 ms
         V_4_156_MS = 6,
-        /// 8.244 μs
+        /// 8.244 ms
         V_8_244_MS = 7,
     };
 
     /**
      * Operating mode of INA3211. The main three modes are:
      *  - Power down: Turns off the current drawn to reduce power consumption. Switching from power-down
-     *  mode takes approximately 40 μs. I2C communication is still enabled while in this mode
+     *  mode takes approximately 40 us. I2C communication is still enabled while in this mode
      *  - Single shot: Measurements are taken only whenever this register is written and set to single shot mode
      *  (there's no need to switch the value from a previous different state).
      *  - Continuous: Measurements are constantly taken periodically until the mode is switched to either
@@ -181,19 +185,19 @@ namespace INA3221 {
           * This value should be selected according to the time requirements of the application.
           * Note that it applies to all channels
          */
-        VoltageTime busVoltageTime = VoltageTime::V_1_1_MS;
+        ConversionTime busVoltageTime = ConversionTime::V_1_1_MS;
 
         /**
           * Time of shunt voltage measurement conversion.
           * This value should be selected according to the time requirements of the application.
           * Note that it applies to all channels
          */
-        VoltageTime shuntVoltageTime = VoltageTime::V_1_1_MS;
+        ConversionTime shuntVoltageTime = ConversionTime::V_1_1_MS;
 
         /**
          * Select mode operation of INNA3211. The main three modes are:
          *  - Power down: Turns off the current drawn to reduce power consumption. Switching from power-down
-         *  mode takes approximately 40 μs. I2C communication is still enabled while in this mode
+         *  mode takes approximately 40 us. I2C communication is still enabled while in this mode
          *  - Single shot: Measurements are taken only whenever this register is written and set to single shot mode
          *  (there's no need to switch the value from a previous different state).
          *  - Continuous: Measurements are constantly taken periodically until the mode is switched to either
@@ -204,13 +208,13 @@ namespace INA3221 {
          */
         OperatingMode operatingMode = OperatingMode::SHUNT_BUS_VOLTAGE_CONT;
 
-        /// Shunt voltage threshold for critical and warning alert for channel1 [μV]
+        /// Shunt voltage threshold for critical and warning alert for channel1 [uV]
         VoltageThreshold threshold1;
 
-        /// Shunt voltage threshold for critical and warning alert for channel2 [μV]
+        /// Shunt voltage threshold for critical and warning alert for channel2 [uV]
         VoltageThreshold threshold2;
 
-        /// Shunt voltage threshold for critical and warning alert for channel3 [μV]
+        /// Shunt voltage threshold for critical and warning alert for channel3 [uV]
         VoltageThreshold threshold3;
 
         /// Shunt voltage sum limit [μV]
@@ -227,7 +231,6 @@ namespace INA3221 {
     public:
         /**
          * Sets the config register as per the passed config
-         * @return Raised error
          */
         etl::expected<void, Error> setup();
 

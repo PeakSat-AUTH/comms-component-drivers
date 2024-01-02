@@ -2,10 +2,10 @@
 
 namespace INA3221 {
 
-    uint16_t voltageConversion(int32_t voltage, uint16_t scale, uint16_t shift) {
+    uint16_t voltageConversion(int32_t voltage, uint16_t base, uint16_t shift) {
         return (voltage < 0) ?
-               (~(std::abs(voltage) / scale << shift) + 1 & 0x7FFF) | 0x8000 :
-               (voltage / scale << shift);
+               (~(std::abs(voltage) / base << shift) + 1 & 0x7FFF) | 0x8000 :
+               (voltage / base << shift);
     }
 
     etl::expected<void, Error> INA3221::i2cWrite(Register address, uint16_t value) {
