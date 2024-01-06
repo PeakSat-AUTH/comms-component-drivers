@@ -1,4 +1,6 @@
 #include "ina3221.hpp"
+#include "FreeRTOS.h"
+#include "task.h"
 
 namespace INA3221 {
 
@@ -77,21 +79,34 @@ namespace INA3221 {
     }
 
     etl::expected<ChannelMeasurement, Error> INA3221::getMeasurement() {
-//        if (singleShot()) {
-//            changeOperatingMode(config.operatingMode); // trigger measurement when on single shot mode
-//            vTaskDelay(etl::max(
-//                    pdMS_TO_TICKS(conversionTime[to_underlying(config.shuntVoltageTime)] * 1000) / 1000,
-//                    pdMS_TO_TICKS(conversionTime[to_underlying(config.shuntVoltageTime)] * 1000) / 1000
-//                    ));
-//            uint16_t maskeValue;
-//            do {
-//                auto conversionBit = i2cRead(Register::MASKE);
-//                if (not conversionBit.has_value()) {
-//                    return etl::unexpected(conversionBit.error());
-//                }
-//                maskeValue = conversionBit.value();
-//            } while (maskeValue and to_underlying(MaskEnableMasks::CVRF))
-//        }
+       if (singleShot()) {
+            // trigger measurement when on single shot mode
+            changeOperatingMode(config.operatingMode); 
+
+            // wait for conversion time
+            TickType_t ticksToConversion = 0;
+            if (shuntEnabled()) {
+                ticksToConversion = etl::max(ticksToConversion,
+                                            pdMS_TO_TICKS(conversionTimeArray[to_underlying(config.shuntVoltageTime)] / 1000));
+            }
+            if (busEnabled()) {
+                ticksToConversion = etl::max(ticksToConversion,
+                                            pdMS_TO_TICKS(conversionTimeArray[to_underlying(config.busVoltageTime)] / 1000));
+            }
+            vTaskDelay(ticksToConversion); 
+
+            // poll conversion bit unit ready or conversion time has passed for a second time
+            auto initialTickCount = xTaskGetTickCount();
+            while (xTaskGetTickCount() - initialTickCount < ticksToConversion) {
+                auto conversionBit = i2cRead(Register::MASKE);
+                if (not conversionBit.has_value()) {
+                    return etl::unexpected(conversionBit.error());
+                }
+
+                uint16_t maskeValue = conversionBit.value();
+                if (maskeValue & to_underlying(MaskEnableMasks::CVRF)) { break; }
+            } 
+        }
 
         VoltageMeasurement shuntMeasurement{etl::nullopt, etl::nullopt, etl::nullopt};
         VoltageMeasurement busMeasurement{etl::nullopt, etl::nullopt, etl::nullopt};
