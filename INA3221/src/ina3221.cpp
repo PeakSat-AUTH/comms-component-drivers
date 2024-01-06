@@ -40,7 +40,6 @@ namespace INA3221 {
         return i2cRead(Register::CONFG);
     }
 
-
     etl::expected<void, Error>
     INA3221::writeRegisterField(Register registerAddress, uint16_t value, uint16_t mask, uint16_t shift) {
         auto reg = i2cRead(registerAddress);
@@ -126,7 +125,6 @@ namespace INA3221 {
                 powerMeasurement[channel] = 1e-9 * busMeasurement[channel].value() * currentMeasurement[channel].value();
             }
         }
-
 
         return std::tuple{busMeasurement, shuntMeasurement, currentMeasurement, powerMeasurement};
     }

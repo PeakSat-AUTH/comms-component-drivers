@@ -19,12 +19,17 @@ constexpr auto to_underlying(T value) {
 }
 
 namespace INA3221 {
+    /// Used for storing the upper and lower voltage bounds in uV
     using VoltageThreshold = etl::pair<int32_t, int32_t>;
 
-    using VoltageMeasurement = etl::array<etl::optional<int32_t>, 3>; /// uV
-    using CurrentMeasurement = etl::array<etl::optional<int32_t>, 3>; /// uA
-    using PowerMeasurement = etl::array<etl::optional<float>, 3>; /// mW
-    using ChannelMeasurement = std::tuple<VoltageMeasurement, VoltageMeasurement, CurrentMeasurement, PowerMeasurement>;
+    /// Used for storing the voltage (either shunt or bus) value of the 3 channels in uV
+    using VoltageMeasurement = etl::array<etl::optional<int32_t>, 3>; 
+    /// Used for storing the current value of the 3 channels in uA
+    using CurrentMeasurement = etl::array<etl::optional<int32_t>, 3>; 
+    /// Used for storing the power consumption value of the 3 channels in mW
+    using PowerMeasurement = etl::array<etl::optional<float>, 3>; 
+    /// Used for storing all of the measurements of the 3 channels 
+    using ChannelMeasurement = std::tuple<VoltageMeasurement, VoltageMeasurement, CurrentMeasurement, PowerMeasurement>; 
 
     /// Device I2C addresses
     enum class I2CAddress : uint16_t {
@@ -130,7 +135,7 @@ namespace INA3221 {
     };
 
     /// Array to accommodate conversion Times in us
-    etl::array<uint32_t, 8> conversionTimeArray{140, 204, 332, 588, 1100, 2116, 8244};
+    constexpr etl::array<uint32_t, 8> conversionTimeArray{140, 204, 332, 588, 1100, 2116, 4156, 8244};
 
     enum class MaskEnableMasks : uint16_t {
         /// conversion ready flag
@@ -346,12 +351,12 @@ namespace INA3221 {
         static constexpr uint16_t ShuntConductance = 10;
 
         /**
-         * Shunt Voltage register base unit in uV
+         * Shunt Voltage registers base unit in uV
          */
         static constexpr uint16_t ShuntVoltBase = 40;
 
         /**
-         * Bus Voltage register base unit in uV
+         * Bus Voltage registers base unit in uV
          */
         static constexpr uint16_t BusVoltBase = 8000;
 
