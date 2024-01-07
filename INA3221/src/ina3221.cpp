@@ -79,7 +79,7 @@ namespace INA3221 {
     }
 
     etl::expected<ChannelMeasurement, Error> INA3221::getMeasurement() {
-       if (singleShot()) {
+        if (singleShot()) {
             // trigger measurement when on single shot mode
             changeOperatingMode(config.operatingMode); 
 
@@ -95,16 +95,15 @@ namespace INA3221 {
             }
             vTaskDelay(ticksToConversion); 
 
-            // poll conversion bit unit ready or conversion time has passed for a second time
+            // poll conversion bit until ready or conversion time has passed for a second time
             auto initialTickCount = xTaskGetTickCount();
             while (xTaskGetTickCount() - initialTickCount < ticksToConversion) {
-                auto conversionBit = i2cRead(Register::MASKE);
-                if (not conversionBit.has_value()) {
-                    return etl::unexpected(conversionBit.error());
+                auto maskeValue = i2cRead(Register::MASKE);
+                if (not maskeValue.has_value()) {
+                    return etl::unexpected(maskeValue.error());
                 }
 
-                uint16_t maskeValue = conversionBit.value();
-                if (maskeValue & to_underlying(MaskEnableMasks::CVRF)) { break; }
+                if (maskeValue.value() & to_underlying(MaskEnableMasks::CVRF)) { break; }
             } 
         }
 
