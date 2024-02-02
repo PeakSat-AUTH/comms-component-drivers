@@ -1177,7 +1177,7 @@ OQPSKChipFrequency At86rf215::get_oqpsk_chip_frequency(Transceiver transceiver,
 	return static_cast<OQPSKChipFrequency>(freq);
 }
 
-uint8_t At86rf215::get_rssi(Transceiver transceiver, Error &err) {
+int8_t At86rf215::get_rssi(Transceiver transceiver, Error &err) {
 	RegisterAddress regrssi;
 
 	if (transceiver == RF09) {
@@ -1283,6 +1283,7 @@ void At86rf215::transmitBasebandPacketsTx(Transceiver transceiver,
 	}
 
 	// write to tx frame buffer
+
 	spi_block_write_8(regfbtxs, length, packet, err);
 	if (err != Error::NO_ERRORS) {
 		return;
@@ -1290,6 +1291,8 @@ void At86rf215::transmitBasebandPacketsTx(Transceiver transceiver,
 
 	tx_ongoing = true;
 	set_state(transceiver, State::RF_TXPREP, err);
+
+
 
 }
 
@@ -1323,22 +1326,22 @@ void At86rf215::packetReception(Transceiver transceiver, Error &err){
 		return;
 	}
 
-	RegisterAddress regtxflh;
-	RegisterAddress regtxfll;
+	RegisterAddress regrxflh;
+	RegisterAddress regrxfll;
 	RegisterAddress regfbtxs;
 
 	if (transceiver == RF09) {
-		regtxflh = BBC0_TXFLH;
-		regtxfll = BBC0_TXFLL;
-		regfbtxs = BBC0_FBTXS;
+		regrxflh = BBC0_RXFLH;
+		regrxfll = BBC0_RXFLL;
+        regfbtxs = BBC0_FBTXS;
 	} else if (transceiver == RF24) {
-		regtxflh = BBC1_TXFLH;
-		regtxfll = BBC1_TXFLL;
+		regrxflh = BBC1_RXFLH;
+		regrxfll = BBC1_RXFLL;
 		regfbtxs = BBC1_FBTXS;
 	}
 
 	// read length
-	uint8_t length = (spi_read_8(regtxflh, err) << 8) | static_cast<uint16_t>(spi_read_8(regtxfll, err)) ;
+	uint8_t length = (spi_read_8(regrxflh, err) << 8) | static_cast<uint16_t>(spi_read_8(regrxfll, err)) ;
 	if (err != Error::NO_ERRORS) {
 		return;
 	}
@@ -1791,19 +1794,23 @@ void At86rf215::handle_irq(void) {
 	volatile uint8_t irq = spi_read_8(RegisterAddress::RF09_IRQS, err);
 	if ((irq & InterruptMask::IFSynchronization) != 0) {
 		// I/Q IF Synchronization Failure handling
+        IFSynchronization_flag = true;
 	}
 	if ((irq & InterruptMask::TransceiverError) != 0) {
 		// Transceiver Error handling
+        TransceiverError_flag = true;
 	}
 	if ((irq & InterruptMask::BatteryLow) != 0) {
 		// Battery Low handling
 	}
     if ((irq & InterruptMask::EnergyDetectionCompletion) != 0) {
+        EnergyDetectionCompletion_flag = true;
         rx_ongoing = false;
         cca_ongoing = false;
         energy_measurement = get_receiver_energy_detection(Transceiver::RF09, err);
     }
     if ((irq & InterruptMask::TransceiverReady) != 0) {
+        TransceiverReady_flag = true ;
         if (rx_ongoing) {
             // Switch to TX state once the transceiver is ready to send
             set_state(Transceiver::RF09, State::RF_RX, err);
@@ -1817,6 +1824,7 @@ void At86rf215::handle_irq(void) {
         }
     }
 	if ((irq & InterruptMask::Wakeup) != 0) {
+        Wakeup_flag = true ;
 		// Wakeup handling
 	}
 
@@ -1824,29 +1832,36 @@ void At86rf215::handle_irq(void) {
 	irq = spi_read_8(RegisterAddress::BBC0_IRQS, err);
 	if ((irq & InterruptMask::FrameBufferLevelIndication) != 0) {
 		// Frame Buffer Level Indication handling
+        FrameBufferLevelIndication_flag = true;
 	}
 	if ((irq & InterruptMask::AGCRelease) != 0) {
 		// AGC Release handling
+        AGCRelease_flag = true ;
 	}
 	if ((irq & InterruptMask::AGCHold) != 0) {
 		// AGC Hold handling
 	}
 	if ((irq & InterruptMask::TransmitterFrameEnd) != 0) {
+        TransmitterFrameEnd_flag = true ;
         tx_ongoing = false;
 	}
 	if ((irq & InterruptMask::ReceiverExtendMatch) != 0) {
 		// Receiver Extended Match handling
+        ReceiverExtendMatch_flag = true ;
 	}
 	if ((irq & InterruptMask::ReceiverAddressMatch) != 0) {
 		// Receiver Address Match handling
+        ReceiverAddressMatch_flag = true ;
 	}
 	if ((irq & InterruptMask::ReceiverFrameEnd) != 0) {
+        ReceiverFrameEnd_flag = true;
 		if (rx_ongoing){
 			packetReception(Transceiver::RF09, err);
 			rx_ongoing = false;
 		}
 	}
 	if ((irq & InterruptMask::ReceiverFrameStart) != 0) {
+        ReceiverFrameStart_flag = true ;
 		rx_ongoing  = true;
 	}
 
