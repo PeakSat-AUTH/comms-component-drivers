@@ -851,7 +851,7 @@ public:
 	 * @param err				Pointer to raised error
 	 * @return rssi				Received Signal Strength
 	 */
-	uint8_t get_rssi(Transceiver transceiver, Error &err);
+	int8_t get_rssi(Transceiver transceiver, Error &err);
 
 	/*
 	 * Set receiver energy detection average duration given by df*dtb
@@ -1111,9 +1111,16 @@ public:
 	 */
 	void transmitBasebandPacketsRx(Transceiver transceiver, Error &err);
 
-
-	uint8_t received_packet[2047];
+    void packetReception(Transceiver transceiver, Error &err);
+	uint8_t received_packet[2047] = {0};
     uint8_t energy_measurement = 0;
+    // flags for interrupts //
+    // radio interrupts //
+    bool IFSynchronization_flag, TransceiverError_flag, EnergyDetectionCompletion_flag, TransceiverReady_flag, Wakeup_flag  = false ;
+
+    // baseband core interrupts //
+    bool FrameBufferLevelIndication_flag, AGCRelease_flag, AGCHold_flag, TransmitterFrameEnd_flag, ReceiverExtendMatch_flag, ReceiverAddressMatch_flag, ReceiverFrameEnd_flag, ReceiverFrameStart_flag = false ;
+
 
 private:
 
@@ -1122,7 +1129,7 @@ private:
  	 * @param transceiver		Specifies the transceiver used
 	 * @param err				Pointer to raised error
      */
-    void packetReception(Transceiver transceiver, Error &err);
+
 
     /// Flag indicating that a TX procedure is ongoing
     bool tx_ongoing;
@@ -1132,6 +1139,7 @@ private:
     bool cca_ongoing;
     /// Flag for checking whether the AGC is locked
     bool agc_held;
+
 
 	SPI_HandleTypeDef *hspi;
 };
