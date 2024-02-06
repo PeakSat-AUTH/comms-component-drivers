@@ -1856,7 +1856,7 @@ State At86rf215::get_state(Transceiver transceiver, Error &err) {
         if ((irq & InterruptMask::ReceiverFrameEnd) != 0) {
             ReceiverFrameEnd_flag = true;
             if (rx_ongoing){
-                packetReception(Transceiver::RF09, err);
+//                packetReception(Transceiver::RF09, err); // hard_fault if enabled for packets above 106 bytes
                 rx_ongoing = false;
             }
         }
