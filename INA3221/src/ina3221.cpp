@@ -5,15 +5,17 @@
 namespace INA3221 {
 
     uint16_t voltageConversion(int32_t voltage, uint16_t base, uint16_t shift) {
-        return (voltage < 0) ?
-               (~(std::abs(voltage) / base << shift) + 1 & 0x7FFF) | 0x8000 :
-               (voltage / base << shift);
+        if (voltage < 0) {
+            return (~(std::abs(voltage) / base << shift) + 1 & 0x7FFF) | 0x8000;
+        }
+
+        return (voltage / base << shift);
     }
 
     etl::expected<void, Error> INA3221::i2cWrite(Register address, uint16_t value) {
-        etl::array<uint8_t, 3> buffer{ to_underlying(address),
-                            static_cast<uint8_t>(value >> 8),
-                            static_cast<uint8_t>(value & 0x00FF) };
+        etl::array<uint8_t, 3> buffer{to_underlying(address),
+                                      static_cast<uint8_t>(value >> 8),
+                                      static_cast<uint8_t>(value & 0x00FF)};
 
         if (HAL_I2C_Master_Transmit(&hi2c, to_underlying(I2CSlaveAddress) << 1, buffer.data(), 3, MaxTimeoutDelay) != HAL_OK) {
             return etl::unexpected(Error::I2C_FAILURE);
@@ -60,15 +62,15 @@ namespace INA3221 {
 
     bool INA3221::singleShot() const {
         return config.operatingMode == OperatingMode::SHUNT_VOLTAGE_SS or
-                config.operatingMode == OperatingMode::BUS_VOLTAGE_SS or
-                config.operatingMode == OperatingMode::SHUNT_BUS_VOLTAGE_SS;
+               config.operatingMode == OperatingMode::BUS_VOLTAGE_SS or
+               config.operatingMode == OperatingMode::SHUNT_BUS_VOLTAGE_SS;
     }
 
     bool INA3221::busEnabled() const {
         return config.operatingMode == OperatingMode::BUS_VOLTAGE_SS or
-                config.operatingMode == OperatingMode::BUS_VOLTAGE_CONT or
-                config.operatingMode == OperatingMode::SHUNT_BUS_VOLTAGE_SS or
-                config.operatingMode == OperatingMode::SHUNT_BUS_VOLTAGE_CONT;
+               config.operatingMode == OperatingMode::BUS_VOLTAGE_CONT or
+               config.operatingMode == OperatingMode::SHUNT_BUS_VOLTAGE_SS or
+               config.operatingMode == OperatingMode::SHUNT_BUS_VOLTAGE_CONT;
     }
 
     bool INA3221::shuntEnabled() const {
@@ -81,19 +83,19 @@ namespace INA3221 {
     etl::expected<ChannelMeasurement, Error> INA3221::getMeasurement() {
         if (singleShot()) {
             // trigger measurement when on single shot mode
-            changeOperatingMode(config.operatingMode); 
+            changeOperatingMode(config.operatingMode);
 
             // wait for conversion time
             TickType_t ticksToConversion = 0;
             if (shuntEnabled()) {
                 ticksToConversion = etl::max(ticksToConversion,
-                                            pdMS_TO_TICKS(conversionTimeArray[to_underlying(config.shuntVoltageTime)] / 1000));
+                                             pdMS_TO_TICKS(conversionTimeArray[to_underlying(config.shuntVoltageTime)] / 1000));
             }
             if (busEnabled()) {
                 ticksToConversion = etl::max(ticksToConversion,
-                                            pdMS_TO_TICKS(conversionTimeArray[to_underlying(config.busVoltageTime)] / 1000));
+                                             pdMS_TO_TICKS(conversionTimeArray[to_underlying(config.busVoltageTime)] / 1000));
             }
-            vTaskDelay(ticksToConversion); 
+            vTaskDelay(ticksToConversion);
 
             // poll conversion bit until ready or conversion time has passed for a second time
             auto initialTickCount = xTaskGetTickCount();
@@ -104,7 +106,7 @@ namespace INA3221 {
                 }
 
                 if (maskeValue.value() & to_underlying(MaskEnableMasks::CVRF)) { break; }
-            } 
+            }
         }
 
         VoltageMeasurement shuntMeasurement{etl::nullopt, etl::nullopt, etl::nullopt};
@@ -140,7 +142,7 @@ namespace INA3221 {
             }
         }
 
-        return std::tuple{busMeasurement, shuntMeasurement, currentMeasurement, powerMeasurement};
+        return std::tuple{shuntMeasurement, busMeasurement, currentMeasurement, powerMeasurement};
     }
 
     etl::expected<int32_t, Error> INA3221::getShuntVoltage(uint8_t channel) {
@@ -167,7 +169,7 @@ namespace INA3221 {
         }
 
         auto unscaledVolts = static_cast<int16_t>(registerValue.value());
-        unscaledVolts >>= 1;
+        unscaledVolts >>= 3;
         const int32_t uVolts = static_cast<int32_t>(unscaledVolts) * BusVoltBase;
 
         return uVolts;
@@ -183,8 +185,8 @@ namespace INA3221 {
 
     etl::expected<void, Error> INA3221::setup() {
         uint16_t mode = (config.enableChannel[0] << 14) | (config.enableChannel[1] << 13) | (config.enableChannel[2] << 12) |
-                       (to_underlying(config.averagingMode) << 9) | (to_underlying(config.busVoltageTime) << 6) |
-                       (to_underlying(config.shuntVoltageTime) << 3) | (to_underlying(config.operatingMode));
+                        (to_underlying(config.averagingMode) << 9) | (to_underlying(config.busVoltageTime) << 6) |
+                        (to_underlying(config.shuntVoltageTime) << 3) | (to_underlying(config.operatingMode));
 
         auto error = i2cWrite(Register::CONFG, mode);
         if (not error.has_value()) { return error; }
@@ -222,9 +224,9 @@ namespace INA3221 {
         if (not error.has_value()) { return error; }
 
         error = i2cWrite(Register::MASKE,
-                       (config.summationChannelControl[0] << 14) | (config.summationChannelControl[1] << 13)
-                       | (config.summationChannelControl[2] << 12) | (config.enableWarnings << 11) |
-                       (config.enableCritical << 10));
+                         (config.summationChannelControl[0] << 14) | (config.summationChannelControl[1] << 13)
+                         | (config.summationChannelControl[2] << 12) | (config.enableWarnings << 11) |
+                         (config.enableCritical << 10));
 
         return error;
     }
